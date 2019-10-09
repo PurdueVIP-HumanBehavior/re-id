@@ -21,17 +21,17 @@ class FasterRCNN:
         self.model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
         self.model.cuda()
         self.model.eval()
+        self.transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
     def getBboxes(self, frame):
-        transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])  # Defing PyTorch Transform
-        img = transform(frame)  # Apply the transform to the image
+        img = self.transform(frame)  # Apply the transform to the image
         img = img.cuda()
         pred = self.model([img])  # Pass the image to the model
         pred_dict = pred[0]
         threshold = .5
         bboxes_ppl = [bbox for bbox, label, score in
-                      zip(pred_dict['boxes'].cuda(), pred_dict['labels'].cuda(), pred_dict['scores'].cuda()) if
-                      COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and score > threshold]
+                      zip(pred_dict['boxes'].cuda(), pred_dict['labels'].cuda(), pred_dict['scores'].cuda())
+                      if COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and score > threshold]
         box_scr = [scr for scr, label in zip(pred_dict['scores'].cuda(), pred_dict['labels'].cuda()) if
                    COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and scr > threshold]
         bboxes_ppl = [[(box[0], box[1]), (box[2], box[3])] for box in bboxes_ppl]
