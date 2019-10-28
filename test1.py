@@ -17,6 +17,7 @@ dataloader = loaders.getLoader("../reid-data")
 
 
 index = 0
+framecount = 0
 
 ##############################################
 # This program only produces cropped images from all three video streams
@@ -29,12 +30,11 @@ for frames in dataloader:
             # person = crop_image(img, box)
             # person_vec = vecgen(person)
             # id = gallery.getID(person_vec)
-            name = '../crops/%03d.jpg' % (index)
+            name = '../crops/%s_%04d_%04d.jpg' % (key, framecount, index)
             w, h = img.size
             crop = (box[0][0].item(), box[0][1].item(), box[1][0].item(), box[1][1].item())
             img.crop(crop).save(name, "JPEG")
             index = index + 1
-            if index == 500:
-                quit(0)
-
-
+            # if index == 500:
+            #     quit(0)
+    framecount = framecount + 1

@@ -94,16 +94,98 @@ def org(path):
             seconhf = seconhf + 1
         os.rename(os.path.join(path, img), os.path.join(path, name))
 
+def getvec2out(path, vecgen):
+    moiz = Image.open(path)
+    return vecgen.getVect2(moiz)
+
+
 if __name__ == "__main__":
-    path = '../crops/ethan'
-    #org(path)
-    hist(path)
+    # path = '../crops/sunjeon'
+    # #org(path)
+    # #hist(path)
+    ################################################################################
+    # path1 = '../crops/ethan'
+    # path2 = '../crops/sunjeon'
+    # imgs1 = os.listdir(path1)
+    # imgs1 = [os.path.join(path1, part) for part in imgs1]
+    # imgs2 = os.listdir(path2)
+    # imgs2 = [os.path.join(path2, part) for part in imgs2]
+    # compare(imgs1, imgs2)
+    ##############################################################################3
+    # path1 = '../crops/moiz/fi000.jpg'
+    # path2 = '../crops/moiz/fi004.jpg'
+    # path3 = '../crops/ethan/f028.jpg'
+    vecgen = vectorgenerator.options[opt.args.vectgen]()
+    # out1 = getvec2out(path1, vecgen)
+    # out2 = getvec2out(path2, vecgen)
+    # out3 = getvec2out(path3, vecgen)
+    # res1 = numpy.dot(out1, numpy.transpose(out2))
+    # res2 = numpy.dot(out1, numpy.transpose(out3))
+    # print(res1)
+    # print(res2)
+    #################################################################################
+    moizpath = '../crops/moiz/fi004.jpg'
+    ethanpath = '../crops/ethan/f028.jpg'
+    sunpath = '../crops/sunjeon/f014.jpg'
 
-    path1 = '../crops/moiz'
-    path2 = '../crops/ethan'
-    imgs1 = os.listdir(path1)
-    imgs1 = [os.path.join(path1, part) for part in imgs1]
-    imgs2 = os.listdir(path2)
-    imgs2 = [os.path.join(path2, part) for part in imgs2]
-    compare(imgs1, imgs2)
+    ids = ['moiz', 'ethan', 'sun']
+    gal = [getvec2out(moizpath, vecgen), getvec2out(ethanpath, vecgen), getvec2out(sunpath, vecgen)]
 
+    moizs = ['../crops/moiz/'+img for img in os.listdir('../crops/moiz')]
+    ethans = ['../crops/ethan/' + img for img in os.listdir('../crops/ethan')]
+    suns = ['../crops/sunjeon/' + img for img in os.listdir('../crops/sunjeon')]
+    lowestnum = min([len(moizs), len(ethans), len(suns)])
+    moizs = moizs[0:lowestnum]
+    ethans = ethans[0:lowestnum]
+    suns = suns[0:lowestnum]
+
+    tests = {
+        'moiz': moizs,
+        'ethan': ethans,
+        'sun': suns
+    }
+
+    data = list()
+    samedists = list()
+    diffs = list()
+
+    success = 0
+    total = 0
+    for key, imgs in tests.items():
+        for val in imgs:
+            # out = getvec2out(val, vecgen)
+            # dists = [numpy.average(numpy.dot(out, numpy.transpose(out2))) for out2 in gal]
+            # for val in dists:
+            #     data.append(val)
+            # if max(dists) > .74:
+            #     indexoi = dists.index(max(dists))
+            #     if indexoi < len(ids):
+            #         persid = ids[dists.index(max(dists))]
+            #         if persid == key:
+            #             success = success + 1
+            #
+            #     sameid = ids.index(key)
+            #     samedists.append(dists[sameid])
+            #     for i, val in enumerate(dists):
+            #         if i != sameid:
+            #             diffs.append(val)
+            # else:
+            #     gal.append(out)
+            out = getvec2out(val, vecgen)
+            dists = [numpy.average(numpy.dot(out, numpy.transpose(out2))) for out2 in gal]
+            id = ids[dists.index(max(dists))]
+            if id == key:
+                success = success + 1
+
+
+            total = total + 1
+            print(total)
+
+    print(success/total)
+    print(len(gal))
+    # plt.hist(samedists, bins=10)
+    # plt.show()
+    # plt.hist(diffs, bins=10)
+    # plt.show()
+    # plt.hist(data, bins=10)
+    # plt.show()

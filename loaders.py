@@ -40,7 +40,7 @@ class FrameLoader:
         frames = {key: frames[self.index] for key, frames in self.videos.items()}
         frames = {key: Image.open(os.path.join(self.path, key, img)) for key, img in frames.items()}
         self.index = self.index + opt.args.interval
-        return frames
+        return self.index, frames
 
 options = {
     opt.defaultkey: "frames",

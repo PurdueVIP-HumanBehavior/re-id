@@ -17,7 +17,7 @@ class BasicGallery:
 
         # calculates distance between query (person) and stored people
         dists = [self.distance(person, pers) for pers in self.people]
-        minval = min(dists)
+        minval = max(dists)
         if minval > threshold:
             return self.ids[dists.index(minval)]
         else:
