@@ -23,7 +23,7 @@ framecount = 0
 # This program only produces cropped images from all three video streams
 ##############################################
 
-for frames in dataloader:
+for index, frames in dataloader:
     for key, img in frames.items():
         boxes, scores = detector.getBboxes(img)
         for box in boxes:

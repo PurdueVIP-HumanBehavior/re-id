@@ -27,6 +27,7 @@ class BasicGallery:
             return id
 
 
+
 options = {
     opt.defaultkey: BasicGallery,
     "basic": BasicGallery

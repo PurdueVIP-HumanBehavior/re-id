@@ -11,9 +11,9 @@ with open(name + ".txt", "r") as fildat:
     rawdata = fildat.read()
 
 colors = {
-    "moiz": (255, 0, 0),
+    1: (255, 0, 0),
     "ethan": (0, 255, 0),
-    "sun": (0, 0, 255)
+    0: (0, 0, 255)
 }
 
 height, width, _ = cv2.imread(imgs[0]).shape
@@ -36,8 +36,8 @@ while index < len(rawdata):
     while ref[0] == next[0]:
         # print(next[1], next[2], next[3], next[4])
         box = ((int(next[1]), int(next[2])), (int(next[3]), int(next[4])))
-        cv2.rectangle(image, box[0], box[1], color=colors[next[5]], thickness=3)  # Draw Rectangle with the coordinates
-        cv2.putText(image, str(next[5]), box[0], cv2.FONT_HERSHEY_SIMPLEX, 3, colors[next[5]], thickness=3)
+        cv2.rectangle(image, box[0], box[1], color=(0,255,0), thickness=3)  # Draw Rectangle with the coordinates
+        cv2.putText(image, str(next[5]), box[0], cv2.FONT_HERSHEY_SIMPLEX, 3, color=(0,255,0), thickness=3)
         index = index + 1
         next = rawdata[index].split(",")
 

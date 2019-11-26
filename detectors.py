@@ -1,4 +1,5 @@
 import torchvision
+import numpy as np
 
 COCO_INSTANCE_CATEGORY_NAMES = [
     '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
@@ -32,9 +33,10 @@ class FasterRCNN:
         bboxes_ppl = [bbox for bbox, label, score in
                       zip(pred_dict['boxes'].cuda(), pred_dict['labels'].cuda(), pred_dict['scores'].cuda())
                       if COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and score > threshold]
-        box_scr = [scr for scr, label in zip(pred_dict['scores'].cuda(), pred_dict['labels'].cuda()) if
-                   COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and scr > threshold]
-        bboxes_ppl = [[(box[0], box[1]), (box[2], box[3])] for box in bboxes_ppl]
+        box_scr = np.array([scr.cpu().detach() for scr, label in zip(pred_dict['scores'].cuda(), pred_dict['labels'].cuda())
+                            if COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and scr > threshold])
+        bboxes_ppl = np.array([[(box[0].cpu().detach(), box[1].cpu().detach()), (box[2].cpu().detach(), box[3].cpu().detach())]
+                               for box in bboxes_ppl])
         return bboxes_ppl, box_scr
 
 options = {

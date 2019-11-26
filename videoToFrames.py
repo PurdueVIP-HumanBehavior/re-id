@@ -1,7 +1,7 @@
 import cv2
 import os
 
-path = '../reid-data'
+path = '../reid-data/msee_atrium'
 name = 'msee_NEside_Moiz'
 ext = '.mp4'
 cap = cv2.VideoCapture(os.path.join(path, name + ext))

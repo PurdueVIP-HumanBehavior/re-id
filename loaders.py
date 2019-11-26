@@ -29,8 +29,17 @@ def getLoader(path):
         contents = [name for name in contents if not os.path.isdir(os.path.join(path, name))]
         return VideoLoader(path, contents)
 
-class FrameLoader:
+class Loader:
+    def __init__(self):
+        pass
+
+    def getVidNames(self):
+        return self.videos.keys()
+
+
+class FrameLoader(Loader):
     def __init__(self, path, frames):
+        super().__init__()
         self.path = path
         self.videos = frames
         self.index = 0
@@ -52,13 +61,15 @@ class FrameLoader:
     def __len__(self):
         return int(self.length / opt.args.interval)
 
-class VideoLoader:
+
+class VideoLoader(Loader):
     def __init__(self, path, vids):
+        super().__init__()
         self.path = path
         names = ['.'.join(key.split('.')[:-1]) for key in vids]
-        self.videos = {name: cv2.VideoCapture(file) for name, file in zip(names, vids)}
+        self.videos = {name: cv2.VideoCapture(os.path.join(path, file)) for name, file in zip(names, vids)}
         self.index = 0
-        self.length = min([vid.get(cv2.CAP_PROP_FRAME_COUNT) for vid in self.videos])
+        self.length = min([vid.get(cv2.CAP_PROP_FRAME_COUNT) for name, vid in self.videos.items()])
 
     def __iter__(self):
         self.index = 0
