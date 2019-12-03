@@ -13,6 +13,6 @@ parser.add_argument("-r", "--distance", default=defaultkey, choices=distopt.keys
 parser.add_argument("-l", "--loader", default=defaultkey, choices=loadopt.keys())
 parser.add_argument("-g", "--gallery", default=defaultkey, choices=galopt.keys())
 parser.add_argument("-v", "--vectgen", default=defaultkey, choices=vecopt.keys())
-parser.add_argument("-i", "--interval", default=5, type=int)
+parser.add_argument("-i", "--interval", default=2, type=int)
 
 args = parser.parse_args()
