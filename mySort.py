@@ -29,6 +29,8 @@ import time
 import argparse
 from filterpy.kalman import KalmanFilter
 
+import cv2
+
 
 @jit
 def iou(bb_test, bb_gt):
@@ -79,7 +81,7 @@ class KalmanBoxTracker(object):
     """
   This class represents the internel state of individual tracked objects observed as bbox.
   """
-    count = 0
+    count = 1
 
     def __init__(self, bbox):
         """
@@ -104,12 +106,13 @@ class KalmanBoxTracker(object):
         self.id = KalmanBoxTracker.count
         KalmanBoxTracker.count += 1
 
-        self.reid = list()
-
         self.history = []
         self.hits = 0
         self.hit_streak = 0
         self.age = 0
+
+        self.reid = list()
+        self.imgfiles = list()
 
     def update(self, bbox):
         """
@@ -140,6 +143,9 @@ class KalmanBoxTracker(object):
     Returns the current bounding box estimate.
     """
         return convert_x_to_bbox(self.kf.x)
+
+    def save_img(self, name):
+        self.imgfiles.append(name)
 
 
 def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
@@ -192,6 +198,8 @@ class Sort(object):
         self.trackers = []
         self.frame_count = 0
 
+        self.rejects = []
+
     def update(self, dets):
         """
     Params:
@@ -222,22 +230,27 @@ class Sort(object):
                 d = matched[np.where(matched[:, 1] == t)[0], 0]
                 trk.update(dets[d, :][0])
 
+        rettracks = list()
+        newtracks = list()
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
             trk = KalmanBoxTracker(dets[i, :])
             self.trackers.append(trk)
+            newtracks.append(trk)
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
             if ((trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits)):
-                ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))  # +1 as MOT benchmark requires positive
+                ret.append(np.concatenate((d, [trk.id])).reshape(1, -1))  # +1 as MOT benchmark requires positive
+                rettracks.append(trk)
             i -= 1
             # remove dead tracklet
             if (trk.time_since_update > self.max_age):
-                self.trackers.pop(i)
+                temprej = self.trackers.pop(i)
+                self.rejects.append(temprej)
         if (len(ret) > 0):
-            return np.concatenate(ret)
-        return np.empty((0, 5))
+            return np.concatenate(ret), rettracks, newtracks
+        return np.empty((0, 5)), rettracks, newtracks
 
 
 def parse_args():

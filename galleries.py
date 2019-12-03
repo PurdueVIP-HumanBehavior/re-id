@@ -1,5 +1,6 @@
 import opt
 import distancemetrics
+import cropper
 
 threshold = .7
 
@@ -25,6 +26,27 @@ class BasicGallery:
             self.ids.append(id)
             self.people.append(person)
             return id
+
+class TriggerGallery:
+    def __init__(self, vectFunc):
+        self.people = list()
+        self.feats = list()
+        self.triggers = list()
+        self.vectFunc = vectFunc
+
+    def addTrigger(self, trig):
+        self.triggers.append(trig)
+
+    def update(self, frames):
+        for trig in self.triggers:
+            add, boxes, img = trig.update(frames)
+            if add:
+                for box in boxes:
+                    cropimg = cropper.crop_image(img, box)
+                    vect = self.vectFunc(cropimg)
+                    self.people.append(cropimg)
+                    self.feats.append(vect)
+
 
 
 

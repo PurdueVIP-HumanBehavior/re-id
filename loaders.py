@@ -53,7 +53,7 @@ class FrameLoader(Loader):
         if self.index >= self.length:
             raise StopIteration
         frames = {key: frames[self.index] for key, frames in self.videos.items()}
-        frames = {key: Image.open(os.path.join(self.path, key, img)) for key, img in frames.items()}
+        frames = {key: cv2.imread(os.path.join(self.path, key, img)) for key, img in frames.items()}
         intosend = self.index
         self.index = self.index + opt.args.interval
         return intosend, frames

@@ -8,8 +8,15 @@ from torch import nn
 from torch.nn import init
 from torchvision import models
 from ResNet50_nFC import ResNet50_nFC
+import numpy as np
+import cv2
+from PIL import Image
 
 num_classes = 751  # change this depend on your dataset
+
+def ndarraytopil(img):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return Image.fromarray(img)
 
 class MGN_Wrap:
     def __init__(self):
@@ -32,6 +39,8 @@ class MGN_Wrap:
         return person
 
     def getVect2(self, inputs):
+        if isinstance(inputs, np.ndarray):
+            inputs = ndarraytopil(inputs)
         inputs = self.transform(inputs).float()
         ff = torch.FloatTensor(inputs.size(0), 2048).zero_()
         inputs = inputs.unsqueeze(0)
@@ -52,7 +61,7 @@ class MGN_Wrap:
 class ResNet50_nFC_Wrap:
     def __init__(self, class_num, weights_path):
         self.model = ResNet50_nFC(class_num)
-        self.load_state_dict(torch.load(weights_path))
+        self.model.load_state_dict(torch.load(weights_path))
         self.model.cuda()
         self.model.eval()
         self.transform = transforms.Compose([
@@ -70,8 +79,31 @@ class ResNet50_nFC_Wrap:
         return person
 
 
+num_cls_dict = { 'market':30, 'duke':23 }
+
+
+class TripleNet:
+    def __init__(self):
+        self.model1 = ResNet50_nFC_Wrap(30, 'market_attr_net_last.pth')
+        self.model2 = ResNet50_nFC_Wrap(23, 'duke_attr_net_last.pth')
+        self.model3 = MGN_Wrap()
+
+    def getVect(self, person):
+        vec1 = self.model1.getVect(person)
+        vec2 = self.model2.getVect(person)
+        vec3 = self.model3.getVect2(person)
+        print(vec1.shape)
+        print(vec2.shape)
+        print(vec3.shape)
+        
+
+    def getVect2(self, person):
+        self.getVect(person)
+
+
 options = {
     opt.defaultkey: MGN_Wrap,
     "MGN": MGN_Wrap,
-    'ResNet50_nFC':ResNet50_nFC_Wrap
+    'ResNet50_nFC': ResNet50_nFC_Wrap,
+    'TripleNet': TripleNet
 }

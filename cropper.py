@@ -1,3 +1,4 @@
+
 def crop_image(img, box):
    x = box[0][0]
    w = box[1][0] - box[0][0]
