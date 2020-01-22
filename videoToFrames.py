@@ -1,8 +1,8 @@
 import cv2
 import os
 
-path = '../reid-data/msee_atrium'
-name = 'msee_NEside_Moiz'
+path = '../reid-data/msee2'
+name = 'SW_Ethan'
 ext = '.mp4'
 cap = cv2.VideoCapture(os.path.join(path, name + ext))
 if name not in os.listdir(path):

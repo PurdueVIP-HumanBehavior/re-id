@@ -1,5 +1,4 @@
-import opt
-
+from constants import defaultkey
 from MGN import MGN
 import torch
 from torch.autograd import Variable
@@ -102,7 +101,7 @@ class TripleNet:
 
 
 options = {
-    opt.defaultkey: MGN_Wrap,
+    defaultkey: MGN_Wrap,
     "MGN": MGN_Wrap,
     'ResNet50_nFC': ResNet50_nFC_Wrap,
     'TripleNet': TripleNet

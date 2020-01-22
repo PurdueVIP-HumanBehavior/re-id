@@ -1,4 +1,4 @@
-import opt
+from constants import defaultkey
 from PIL import Image
 import os
 import cv2
@@ -91,7 +91,7 @@ class VideoLoader(Loader):
 
 
 options = {
-    opt.defaultkey: "frames",
+    defaultkey: "frames",
     "frames": "frames",
     "videos": "videos"
 }

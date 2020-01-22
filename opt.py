@@ -1,6 +1,5 @@
-defaultkey = "default"
-
 import argparse
+from constants import defaultkey
 from detectors import options as detopt
 from distancemetrics import options as distopt
 from loaders import options as loadopt

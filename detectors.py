@@ -1,3 +1,4 @@
+from constants import defaultkey
 import torchvision
 import numpy as np
 
@@ -40,6 +41,6 @@ class FasterRCNN:
         return bboxes_ppl, box_scr
 
 options = {
-    "default": FasterRCNN,
+    defaultkey: FasterRCNN,
     "FasterRCNN": FasterRCNN
 }

@@ -1,11 +1,20 @@
 import cv2
 import os
 
-name = "mov3"
-interval = 10
-path = os.path.join("../reid-data/", name)
+name = "SW_Ethan"
+interval = 2
+path = os.path.join("../reid-data/msee2", name)
 imgs = os.listdir(path)
 imgs = [os.path.join(path, obj) for obj in imgs]
+
+frameind = 0
+idind = 1
+x1ind = 2
+y1ind = 3
+x2ind = 4
+y2ind = 5
+delimiter = ','
+
 
 with open(name + ".txt", "r") as fildat:
     rawdata = fildat.read()
@@ -26,7 +35,7 @@ cv2.resizeWindow("vid", 1067,600)
 
 while index < len(rawdata):
     line = rawdata[index]
-    ref = line.split(",")
+    ref = line.split(delimiter)
     next = ref
     if ref[0] == '':
         break
@@ -35,9 +44,9 @@ while index < len(rawdata):
     image = cv2.imread(imgfile)
     while ref[0] == next[0]:
         # print(next[1], next[2], next[3], next[4])
-        box = ((int(next[1]), int(next[2])), (int(next[3]), int(next[4])))
+        box = ((int(next[x1ind]), int(next[y1ind])), (int(next[x2ind]), int(next[y2ind])))
         cv2.rectangle(image, box[0], box[1], color=(0,255,0), thickness=3)  # Draw Rectangle with the coordinates
-        cv2.putText(image, str(next[5]), box[0], cv2.FONT_HERSHEY_SIMPLEX, 3, color=(0,255,0), thickness=3)
+        cv2.putText(image, str(next[idind]), box[0], cv2.FONT_HERSHEY_SIMPLEX, 3, color=(0,255,0), thickness=3)
         index = index + 1
         next = rawdata[index].split(",")
 

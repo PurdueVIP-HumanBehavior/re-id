@@ -1,4 +1,4 @@
-import opt
+from constants import defaultkey
 import distancemetrics
 import cropper
 
@@ -51,6 +51,6 @@ class TriggerGallery:
 
 
 options = {
-    opt.defaultkey: BasicGallery,
+    defaultkey: BasicGallery,
     "basic": BasicGallery
 }
