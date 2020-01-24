@@ -19,7 +19,7 @@ firstimgpath = "../reid-data/msee2/NE_Moiz/00000.jpg"
 
 detector = detectors.options[args.detector]()
 vecgen = vectorgenerator.options[args.vectgen]()
-dataloader = loaders.getLoader(datapath)
+dataloader = loaders.getLoader(datapath, args.loader, args.interval)
 
 def getvec2out(path, vecgen):
     if os.path.isfile(path):
