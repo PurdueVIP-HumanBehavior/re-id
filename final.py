@@ -14,13 +14,23 @@ import bboxtrigger
 from scipy.stats import mode
 from tqdm import tqdm
 import sys
+import argparse
 
+# TODO: Don't use global vars, put in args
 datapath = "data"
-firstimgpath = "data/00000.jpg"
+firstimgpath = "00000.jpg"
 
-detector = detectors.options[args.detector]()
-vecgen = vectorgenerator.options[args.vectgen]()
-dataloader = loaders.getLoader(datapath, args.loader, args.interval)
+
+def init_args():
+    parser = argparse.ArgumentParser(description="multi-camera re-id system")
+    parser.add_argument("-d", "--detector", default=defaultkey, choices=detopt.keys())
+    parser.add_argument("-r", "--distance", default=defaultkey, choices=distopt.keys())
+    parser.add_argument("-l", "--loader", default=defaultkey, choices=loadopt.keys())
+    parser.add_argument("-g", "--gallery", default=defaultkey, choices=galopt.keys())
+    parser.add_argument("-v", "--vectgen", default=defaultkey, choices=vecopt.keys())
+    parser.add_argument("-i", "--interval", default=2, type=int)
+    args = parser.parse_args()
+    return args
 
 
 def getvec2out(path, vecgen):
@@ -59,15 +69,19 @@ def loadPredefGal(path):
     return retval
 
 
+# TODO: Don't use global vars
+detector = detectors.options[args.detector]()
+vecgen = vectorgenerator.options[args.vectgen]()
+dataloader = loaders.getLoader(datapath, args.loader, args.interval)
+
+
 ###############################################################
 def getVect(croppedimg):
     return vecgen.getVect2(croppedimg)
 
 
 def main():
-    import ipdb
-
-    ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
     # setup triggers
     refimg = cv2.imread(firstimgpath)
     chkcoord1 = [[1471, 67], [1487, 117]]
@@ -91,7 +105,7 @@ def main():
         vidnames: open(vidnames + "tmp.txt", "w")
         for vidnames in dataloader.getVidNames()
     }
-
+    # import ipdb; ipdb.set_trace()
     newfilenum = 0
 
     ###############################################################
@@ -154,7 +168,7 @@ def main():
     # save images from gallery captured throughout video
     for i, img in enumerate(gallery.people):
         cv2.imwrite("tmpgal/%03d.jpg" % i, img)
-
+    # TODO : Bug
     # load up the gallery (an artifact of debugging)
     mangall = loadPredefGal("tmpgal/")
 

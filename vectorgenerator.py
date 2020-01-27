@@ -22,6 +22,7 @@ def ndarraytopil(img):
 class MGN_Wrap:
     def __init__(self):
         self.model = MGN()
+        # TODO: Bug
         self.model.load_state_dict(torch.load("MGN.pt"))
         self.model.cuda()
         self.model.eval()
