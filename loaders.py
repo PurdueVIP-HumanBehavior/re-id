@@ -75,7 +75,6 @@ class FrameLoader(Loader):
 class VideoLoader(Loader):
     def __init__(self, path, vids, interval=1):
         super().__init__()
-        # import ipdb; ipdb.set_trace()
         self.path = path
         names = [".".join(key.split(".")[:-1]) for key in vids]
         self.videos = {
@@ -93,16 +92,21 @@ class VideoLoader(Loader):
         return self
 
     def __next__(self):
-        # import ipdb; ipdb.set_trace()
-        if self.index >= self.length:
+        if self.index >= self.length - 1:
             raise StopIteration
         retval = dict()
         for name, vid in self.videos.items():
+            print("Index: {}/{}".format(self.index, self.length))
             vid.set(cv2.CAP_PROP_POS_FRAMES, self.index)
             # https://github.com/opencv/opencv/issues/11126
-            _, retval[name] = vid.read()
+            success, retval[name] = vid.read()
+            # NOTE: checking the video reader's output than
+            # doing the bookkeeping using indices
+            if not success:
+                raise StopIteration
         indtosend = self.index
         self.index = self.index + self.interval
+
         return indtosend, retval
 
     def __len__(self):
