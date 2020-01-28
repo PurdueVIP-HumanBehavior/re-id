@@ -125,8 +125,8 @@ def main():
             # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
             tracker = trackers[vidname]
             dets = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
+            # TODO: this is weird the update func returns sth else
             tracks, trksoff, newtrks = tracker.update(dets)
-
             # find indexes of returned bounding boxes that meet ideal ratio
             trkbboxes = np.array(tracks)
             widths = trkbboxes[:, 2] - trkbboxes[:, 0]
