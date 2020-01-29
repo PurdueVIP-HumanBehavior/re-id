@@ -1,5 +1,6 @@
 import cv2
 import os
+import numpy as np
 
 # TODO: (nhendy) this script needs massive clean up
 
