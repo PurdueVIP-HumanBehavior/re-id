@@ -47,9 +47,21 @@ class TriggerGallery:
             if add:
                 for box in boxes:
                     cropimg = cropper.crop_image(img, box)
+<<<<<<< HEAD
                     vect = self._attribute_extractor(cropimg)
                     self._people.append(cropimg)
                     self._feats.append(vect)
 
 
 options = {defaultkey: BasicGallery, "basic": BasicGallery}
+=======
+                    vect = self.vectFunc(cropimg)
+                    self.people.append(cropimg)
+                    self.feats.append(vect)
+
+
+options = {
+    defaultkey: BasicGallery,
+    "basic": BasicGallery
+}
+>>>>>>> remove io ops
