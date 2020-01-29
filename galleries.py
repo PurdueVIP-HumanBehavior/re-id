@@ -48,8 +48,6 @@ class TriggerGallery:
                     self.feats.append(vect)
 
 
-
-
 options = {
     defaultkey: BasicGallery,
     "basic": BasicGallery
