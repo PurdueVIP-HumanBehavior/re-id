@@ -14,6 +14,15 @@ import bboxtrigger
 from scipy.stats import mode
 from tqdm import tqdm
 
+"""
+TODO: 
+    - write utility function for naming folders/files so don't overwrite old ones
+    - compute time of different computations within program
+        - try YOLO for detection (in previous tests, FasterRCNN has been slower than MGN)
+        - get a working repo on ee220 computer
+    - implement only one ID per frame constraint
+"""
+
 datapath = "../reid-data/msee2"
 firstimgpath = "../reid-data/msee2/NE_Moiz/00000.jpg"
 
@@ -63,6 +72,17 @@ def getVect(croppedimg):
     return vecgen.getVect2(croppedimg)
 
 
+def reid_it(img, gallery, track):
+    uniqvect = getVect(img)
+    if len(gallery.feats):
+        dists = [
+            np.average(np.dot(uniqvect, np.transpose(out2))) for out2 in gallery.feats
+        ]
+        index = getMaxIndex(dists, k=1)
+        track.reid.append(index)
+
+
+
 # setup triggers
 refimg = cv2.imread(firstimgpath)
 chkcoord1 = [[1471, 67], [1487, 117]]
@@ -83,7 +103,8 @@ gallery.addTrigger(trig2)
 # create trackers for each video/camera
 trackers = {vidnames: Sort() for vidnames in dataloader.getVidNames()}
 outfiles = {
-    vidnames: open(vidnames + "tmp.txt", "w") for vidnames in dataloader.getVidNames()
+    #vidnames: open(vidnames + ".txt", "w") for vidnames in dataloader.getVidNames()
+    vidnames: list() for vidnames in dataloader.getVidNames()
 }
 
 newfilenum = 0
@@ -113,26 +134,37 @@ for findex, frames in tqdm(dataloader):
         heights = trkbboxes[:, 3] - trkbboxes[:, 1]
         aspectratio = heights / widths
         readybools = np.isclose(aspectratio, 2, rtol=0.25)
-        indexes = np.arange(len(tracks))[readybools]
+        idealindexes = np.arange(len(tracks))[readybools]
 
         # iterate through returned bounding boxes
         for ind, trk in enumerate(tracks):
             box = ((int(trk[0]), int(trk[1])), (int(trk[2]), int(trk[3])))
 
             # if bounding box meets ideal ratio, save image of person as reference
-            if ind in indexes:
+            if ind in idealindexes:
                 cropimg = crop_image(frame, box)
                 if cropimg.size > 5:
+                    """
                     newname = "tmpfiles/%07d.jpg" % newfilenum
                     newfilenum = newfilenum + 1
                     cv2.imwrite(newname, cropimg)
                     trksoff[ind].save_img(newname)
+                    """
+                    reid_it(cropimg, gallery, trksoff[ind])
 
             # write bounding box, frame number, and trackid to file
+            if len(trksoff[ind].reid) != 0:
+                idval = mode(trksoff[ind].reid)[0][0]
+            else:
+                idval = -1
+
+            """
             outfiles[vidname].write(
                 "%d,%d,%.2f,%.2f,%.2f,%.2f\n"
-                % (findex, trk[4], box[0][0], box[0][1], box[1][0], box[1][1])
-            )
+                % (findex, idval, box[0][0], box[0][1], box[1][0], box[1][1])
+            )"""
+
+            outfiles[vidname].append([findex, idval, box[0][0], box[0][1], box[1][0], box[1][1]])
 
         # iterate through new tracks and add their current bounding box to list of track references
         for trk in newtrks:
@@ -140,15 +172,17 @@ for findex, frames in tqdm(dataloader):
             box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
             cropimg = crop_image(frame, box)
             if cropimg.size > 5:
-                newname = "tmpfiles/%07d.jpg" % newfilenum
-                newfilenum = newfilenum + 1
-                cv2.imwrite(newname, cropimg)
-                trk.save_img(newname)
+                reid_it(cropimg, gallery, trk)
+
+for key in outfiles:
+    np.savetxt(key + ".txt", np.array(outfiles[key]), delimiter=",")
+
 
 # save images from gallery captured throughout video
 for i, img in enumerate(gallery.people):
     cv2.imwrite("tmpgal/%03d.jpg" % i, img)
 
+"""
 # load up the gallery (an artifact of debugging)
 mangall = loadPredefGal("tmpgal/")
 
@@ -205,3 +239,4 @@ for vidname, sorto in trackers.items():
 
     # save
     np.savetxt(vidname + ".txt", outfiles[vidname])
+"""
