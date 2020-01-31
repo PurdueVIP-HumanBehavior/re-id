@@ -1,6 +1,13 @@
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> WIP: rename files move around functions
+=======
 # TODO:(nhendy) script level docstring
 
+>>>>>>> WIP: more refactor:run_reid_pipeline.py
 import galleries
+import distancemetrics
 import detectors
 import attribute_extractors
 import loaders
@@ -9,15 +16,16 @@ from utils import crop_image
 import argparse
 import functools
 import os
+import sys
 import numpy as np
 import cv2
 from sort import Sort
 import bboxtrigger
 from scipy.stats import mode
 from tqdm import tqdm
-from constants import *
 
 
+<<<<<<< HEAD
 def init_args():
     parser = argparse.ArgumentParser(description="multi-camera re-id system")
     parser.add_argument("-d",
@@ -53,6 +61,43 @@ def init_args():
     parser.add_argument("-video_path",
                         required=True,
                         help="Path to the video to run the pipeline on")
+=======
+def init_args():
+    parser = argparse.ArgumentParser(description="multi-camera re-id system")
+    parser.add_argument("-d",
+                        "--detector",
+                        help="Object detection model",
+                        default='fasters_rcnn',
+                        choices=detopt.keys())
+    parser.add_argument("-r",
+                        "--distance",
+                        default='dot_product',
+                        help="Distance metric used for retrieval",
+                        choices=distopt.keys())
+    parser.add_argument("-l",
+                        "--loader",
+                        default='video',
+                        help="Type of data loading",
+                        choices=loadopt.keys())
+    parser.add_argument("-g",
+                        "--gallery",
+                        default='trigger',
+                        help="Type of Gallery",
+                        choices=galopt.keys())
+    parser.add_argument("-v",
+                        "--vect_gen",
+                        default='mgn',
+                        help="Attribute extraction model",
+                        choices=vecopt.keys())
+    parser.add_argument("-i",
+                        "--interval",
+                        default=2,
+                        help="Sampling interval",
+                        type=int)
+    parser.add_argument("-video_path",
+                        required=True,
+                        help="Path to the video to run the pipeline on")
+>>>>>>> WIP: rename files move around functions
     parser.add_argument(
         "-ref_image_path",
         required=True,
@@ -61,14 +106,14 @@ def init_args():
     return parser.parse_args()
 
 
-def getvec2out(path, vecgen):
+def get_vec_2_out(path, vecgen):
     if os.path.isfile(path):
         moiz = Image.open(path)
-        return vecgen.getVect(moiz)
+        return vecgen.get_vect2(moiz)
     return None
 
 
-def getMaxIndex(array, k=1):
+def get_max_index(array, k=1):
     maxnums = array[0:k]
     maxinds = np.arange(0, k)
     minins = min(maxnums)
@@ -85,29 +130,50 @@ def getMaxIndex(array, k=1):
         return [x for _, x in sorted(zip(maxnums, maxinds), reverse=True)]
 
 
-def loadPredefGal(path):
+def load_predef_gal(path, vecgen):
     if not os.path.exists(path):
         raise ValueError("path doesn't exist")
     imgfile = os.listdir(path)
     retval = list()
     for name in imgfile:
         na = ".".join(name.split(".")[:-1])
-        img = getvec2out(os.path.join(path, name), vecgen)
+        img = get_vec_2_out(os.path.join(path, name), vecgen)
         retval.append(img)
     return retval
 
 
 ###############################################################
-def get_vect(attribute_extractor, croppedimg):
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+def getVect(attribute_extractor, croppedimg):
     return attribute_extractor.compute_feat_vector(croppedimg)
+=======
+>>>>>>> renaming function name/calls
+=======
+def getVect(attribute_extractor, croppedimg):
+=======
+def get_vect(attribute_extractor, croppedimg):
+>>>>>>> WIP: more refactor:run_reid_pipeline.py
+    return attribute_extractor.compute_feat_vector(croppedimg)
+>>>>>>> WIP: rename files move around functions
 
 
 def main():
     args = init_args()
     detector = detectors.options[args.detector]()
-    attribute_extractor = attribute_extractors.options[args.vectgen]()
+    vecgen = vectorgenerator.options[args.vectgen]()
+<<<<<<< HEAD
+<<<<<<< HEAD
     dataloader = loaders.get_loader(args.video_path, args.loader,
                                     args.interval)
+=======
+=======
+    attribute_extractor = attribute_extractors.options[args.vectgen]()
+>>>>>>> WIP: more refactor:run_reid_pipeline.py
+    dataloader = loaders.get_loader(args.video_path, args.loader,
+                                    args.interval)
+>>>>>>> WIP: rename files move around functions
 
     ref_img = cv2.imread(args.ref_image_path)
     trig1 = bboxtrigger.BboxTrigger(
@@ -136,10 +202,10 @@ def main():
     gallery.add_trigger(trig2)
 
     # create trackers for each video/camera
-    trackers = {vidnames: Sort() for vidnames in dataloader.getVidNames()}
+    trackers = {vidnames: Sort() for vidnames in dataloader.get_vid_names()}
     outfiles = {
         vidnames: open(vidnames + "tmp.txt", "w")
-        for vidnames in dataloader.getVidNames()
+        for vidnames in dataloader.get_vid_names()
     }
 
     newfilenum = 0
@@ -155,7 +221,7 @@ def main():
         # iterate through each camera
         for vidname, frame in frames.items():
             # get bounding boxes of all people
-            boxes, scores = detector.getBboxes(frame)
+            boxes, scores = detector.get_bboxes(frame)
 
             # send people bounding boxes to tracker
             # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
@@ -185,9 +251,15 @@ def main():
                         trksoff[ind].save_img(newname)
 
                 # write bounding box, frame number, and trackid to file
+<<<<<<< HEAD
                 outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
                                         (findex, trk[4], box[0][0], box[0][1],
                                          box[1][0], box[1][1]))
+=======
+                outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
+                                        (findex, trk[4], box[0][0], box[0][1],
+                                         box[1][0], box[1][1]))
+>>>>>>> WIP: rename files move around functions
 
             # iterate through new tracks and add their current bounding box to list of track references
             for trk in newtrks:
@@ -205,7 +277,7 @@ def main():
         cv2.imwrite("tmpgal/%03d.jpg" % i, img)
 
     # load up the gallery (an artifact of debugging)
-    mangall = loadPredefGal("tmpgal/")
+    mangall = load_predef_gal("tmpgal/", vecgen)
 
     # write filename for all reference images for each track (artifact of debugging)
     for key in outfiles:
@@ -231,7 +303,7 @@ def main():
             # iterate through every reference image for this track
             for img in reidimgs:
                 # get feature vector of image
-                uniqvect = getvec2out(img, vecgen)
+                uniqvect = get_vec_2_out(img, vecgen)
 
                 if uniqvect is not None:
                     # find out what is the most similar gallery image
@@ -239,7 +311,7 @@ def main():
                         np.average(np.dot(uniqvect, np.transpose(out2)))
                         for out2 in mangall
                     ]
-                    index = getMaxIndex(dists, k=1)
+                    index = get_max_index(dists, k=1)
                     trk.reid.append(index)
 
             # creating a dictionary mapping the trackIDs to the Re-IDs based on most frequent Re-ID of a track

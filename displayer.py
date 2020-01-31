@@ -5,13 +5,6 @@ import numpy as np
 
 # TODO: (nhendy) this script needs massive clean up
 
-frameind = 0
-idind = 1
-x1ind = 2
-y1ind = 3
-x2ind = 4
-y2ind = 5
-delimiter = ','
 
 def main():
     name = "SW_Ethan"
