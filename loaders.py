@@ -3,7 +3,8 @@ from PIL import Image
 import os
 import cv2
 
-def getLoader(path, typeloader, interval):
+
+def get_loader(path, typeloader, interval):
     # check if path exists
     if not os.path.exists(path):
         raise ValueError("path: {} does not exist".format(path))
