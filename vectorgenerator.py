@@ -13,7 +13,7 @@ from PIL import Image
 
 num_classes = 751  # change this depend on your dataset
 
-def ndarraytopil(img):
+def ndarray_to_pil(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return Image.fromarray(img)
 
@@ -29,7 +29,7 @@ class MGN_Wrap:
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
-    def getVect(self, person):
+    def get_vect(self, person):
         person = self.transform(person).float()
         person = Variable(person, requires_grad=True)
         person = person.unsqueeze(0)  # this is for VGG, may not be needed for ResNet
@@ -37,9 +37,9 @@ class MGN_Wrap:
         person = self.model(person)
         return person
 
-    def getVect2(self, inputs):
+    def get_vect2(self, inputs):
         if isinstance(inputs, np.ndarray):
-            inputs = ndarraytopil(inputs)
+            inputs = ndarray_to_pil(inputs)
         inputs = self.transform(inputs).float()
         ff = torch.FloatTensor(inputs.size(0), 2048).zero_()
         inputs = inputs.unsqueeze(0)
@@ -69,7 +69,7 @@ class ResNet50_nFC_Wrap:
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
-    def getVect(self, person):
+    def get_vect(self, person):
         person = self.transform(person).float()
         person = person.unsqueeze(dim=0)
         person = Variable(person, requires_grad=True)
@@ -87,17 +87,17 @@ class TripleNet:
         self.model2 = ResNet50_nFC_Wrap(23, 'duke_attr_net_last.pth')
         self.model3 = MGN_Wrap()
 
-    def getVect(self, person):
-        vec1 = self.model1.getVect(person)
-        vec2 = self.model2.getVect(person)
-        vec3 = self.model3.getVect2(person)
+    def get_vect(self, person):
+        vec1 = self.model1.get_vect(person)
+        vec2 = self.model2.get_vect(person)
+        vec3 = self.model3.get_vect2(person)
         print(vec1.shape)
         print(vec2.shape)
         print(vec3.shape)
         
 
-    def getVect2(self, person):
-        self.getVect(person)
+    def get_vect2(self, person):
+        self.get_vect(person)
 
 
 options = {

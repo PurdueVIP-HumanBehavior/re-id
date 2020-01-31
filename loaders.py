@@ -34,7 +34,7 @@ class Loader:
     def __init__(self):
         pass
 
-    def getVidNames(self):
+    def get_vid_names(self):
         return self.videos.keys()
 
 
