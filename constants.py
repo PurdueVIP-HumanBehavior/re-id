@@ -13,3 +13,8 @@ TRIGGER_ROI_COORDS_TWO = [[114, 64], [600, 722]]
 # This is w.r.t Structured similarity index. These values are derived empirically.
 DOOR_CLOSED_THRESHOLD = 0.27
 DOOR_OPEN_THRESHOLD = 0.87
+
+# MGN normalization parameters
+PER_CHANNEL_MEAN = [0.485, 0.456, 0.406]
+PER_CHANNEL_STD = [0.229, 0.224, 0.225]
+INPUT_RESOLUTION = (384, 128)
