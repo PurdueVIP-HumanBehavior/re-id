@@ -29,7 +29,7 @@ class FasterRCNN:
         self.transform = torchvision.transforms.Compose(
             [torchvision.transforms.ToTensor()])
 
-    def getBboxes(self, frame):
+    def get_bboxes(self, frame):
         img = self.transform(frame)  # Apply the transform to the image
         img = img.cuda()
         pred = self.model([img])  # Pass the image to the model
