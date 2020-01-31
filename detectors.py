@@ -50,6 +50,3 @@ class FasterRCNN:
                                 (box[2].cpu().detach(), box[3].cpu().detach())]
                                for box in bboxes_ppl])
         return bboxes_ppl, box_scr
-
-
-options = {defaultkey: FasterRCNN, "fasters_rcnn": FasterRCNN}
