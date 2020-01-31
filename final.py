@@ -1,10 +1,13 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 from opt import args
 import argparse
 from constants import *
 
 >>>>>>> renaming function name/calls
+=======
+>>>>>>> WIP: rename files move around functions
 import galleries
 import distancemetrics
 import detectors
@@ -24,6 +27,7 @@ from scipy.stats import mode
 from tqdm import tqdm
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 def init_args():
     parser = argparse.ArgumentParser(description="multi-camera re-id system")
@@ -85,6 +89,43 @@ def init_args():
         "-video_path", required=True, help="Path to the video to run the pipeline on"
     )
 >>>>>>> WIP: refactor
+=======
+def init_args():
+    parser = argparse.ArgumentParser(description="multi-camera re-id system")
+    parser.add_argument("-d",
+                        "--detector",
+                        help="Object detection model",
+                        default='fasters_rcnn',
+                        choices=detopt.keys())
+    parser.add_argument("-r",
+                        "--distance",
+                        default='dot_product',
+                        help="Distance metric used for retrieval",
+                        choices=distopt.keys())
+    parser.add_argument("-l",
+                        "--loader",
+                        default='video',
+                        help="Type of data loading",
+                        choices=loadopt.keys())
+    parser.add_argument("-g",
+                        "--gallery",
+                        default='trigger',
+                        help="Type of Gallery",
+                        choices=galopt.keys())
+    parser.add_argument("-v",
+                        "--vect_gen",
+                        default='mgn',
+                        help="Attribute extraction model",
+                        choices=vecopt.keys())
+    parser.add_argument("-i",
+                        "--interval",
+                        default=2,
+                        help="Sampling interval",
+                        type=int)
+    parser.add_argument("-video_path",
+                        required=True,
+                        help="Path to the video to run the pipeline on")
+>>>>>>> WIP: rename files move around functions
     parser.add_argument(
         "-ref_image_path",
         required=True,
@@ -136,6 +177,7 @@ def load_predef_gal(path, vecgen):
 ###############################################################
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 def getVect(attribute_extractor, croppedimg):
     return attribute_extractor.compute_feat_vector(croppedimg)
 =======
@@ -144,6 +186,10 @@ def getVect(croppedimg):
 >>>>>>> WIP: refactor
 =======
 >>>>>>> renaming function name/calls
+=======
+def getVect(attribute_extractor, croppedimg):
+    return attribute_extractor.compute_feat_vector(croppedimg)
+>>>>>>> WIP: rename files move around functions
 
 
 def main():
@@ -151,11 +197,16 @@ def main():
     detector = detectors.options[args.detector]()
     vecgen = vectorgenerator.options[args.vectgen]()
 <<<<<<< HEAD
+<<<<<<< HEAD
     dataloader = loaders.get_loader(args.video_path, args.loader,
                                     args.interval)
 =======
     dataloader = loaders.getLoader(args.video_path, args.loader, args.interval)
 >>>>>>> WIP: refactor
+=======
+    dataloader = loaders.get_loader(args.video_path, args.loader,
+                                    args.interval)
+>>>>>>> WIP: rename files move around functions
 
     ref_img = cv2.imread(args.ref_image_path)
     trig1 = bboxtrigger.BboxTrigger(
@@ -236,6 +287,7 @@ def main():
 
                 # write bounding box, frame number, and trackid to file
 <<<<<<< HEAD
+<<<<<<< HEAD
                 outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
                                         (findex, trk[4], box[0][0], box[0][1],
                                          box[1][0], box[1][1]))
@@ -245,6 +297,11 @@ def main():
                     % (findex, trk[4], box[0][0], box[0][1], box[1][0], box[1][1])
                 )
 >>>>>>> WIP: refactor
+=======
+                outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
+                                        (findex, trk[4], box[0][0], box[0][1],
+                                         box[1][0], box[1][1]))
+>>>>>>> WIP: rename files move around functions
 
             # iterate through new tracks and add their current bounding box to list of track references
             for trk in newtrks:
