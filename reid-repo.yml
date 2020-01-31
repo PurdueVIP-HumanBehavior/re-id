@@ -1,4 +1,4 @@
-name: MGN-pytorch
+name: HBS20
 channels:
   - anaconda
   - pytorch
