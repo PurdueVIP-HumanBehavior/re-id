@@ -16,6 +16,7 @@ from tqdm import tqdm
 from constants import *
 
 
+<<<<<<< HEAD
 def init_args():
     parser = argparse.ArgumentParser(description="multi-camera re-id system")
     parser.add_argument("-d",
@@ -51,6 +52,31 @@ def init_args():
     parser.add_argument("-video_path",
                         required=True,
                         help="Path to the video to run the pipeline on")
+=======
+"""
+TODO:
+    - write utility function for naming folders/files so don't overwrite old ones
+    - compute time of different computations within program
+        - try YOLO for detection (in previous tests, FasterRCNN has been slower than MGN)
+        - get a working repo on ee220 computer
+    - implement only one ID per frame constraint
+"""
+
+datapath = "../reid-data/msee2"
+
+
+def init_args():
+    parser = argparse.ArgumentParser(description="multi-camera re-id system")
+    parser.add_argument("-d", "--detector", default=defaultkey, choices=detopt.keys())
+    parser.add_argument("-r", "--distance", default=defaultkey, choices=distopt.keys())
+    parser.add_argument("-l", "--loader", default=defaultkey, choices=loadopt.keys())
+    parser.add_argument("-g", "--gallery", default=defaultkey, choices=galopt.keys())
+    parser.add_argument("-v", "--vectgen", default=defaultkey, choices=vecopt.keys())
+    parser.add_argument("-i", "--interval", default=2, type=int)
+    parser.add_argument(
+        "-video_path", required=True, help="Path to the video to run the pipeline on"
+    )
+>>>>>>> WIP: refactor
     parser.add_argument(
         "-ref_image_path",
         required=True,
@@ -96,16 +122,25 @@ def loadPredefGal(path):
 
 
 ###############################################################
+<<<<<<< HEAD
 def getVect(attribute_extractor, croppedimg):
     return attribute_extractor.compute_feat_vector(croppedimg)
+=======
+def getVect(croppedimg):
+    return vecgen.getVect2(croppedimg)
+>>>>>>> WIP: refactor
 
 
 def main():
     args = init_args()
     detector = detectors.options[args.detector]()
     vecgen = vectorgenerator.options[args.vectgen]()
+<<<<<<< HEAD
     dataloader = loaders.get_loader(args.video_path, args.loader,
                                     args.interval)
+=======
+    dataloader = loaders.getLoader(args.video_path, args.loader, args.interval)
+>>>>>>> WIP: refactor
 
     ref_img = cv2.imread(args.ref_image_path)
     trig1 = bboxtrigger.BboxTrigger(
@@ -182,9 +217,16 @@ def main():
                         trksoff[ind].save_img(newname)
 
                 # write bounding box, frame number, and trackid to file
+<<<<<<< HEAD
                 outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
                                         (findex, trk[4], box[0][0], box[0][1],
                                          box[1][0], box[1][1]))
+=======
+                outfiles[vidname].write(
+                    "%d,%d,%.2f,%.2f,%.2f,%.2f\n"
+                    % (findex, trk[4], box[0][0], box[0][1], box[1][0], box[1][1])
+                )
+>>>>>>> WIP: refactor
 
             # iterate through new tracks and add their current bounding box to list of track references
             for trk in newtrks:
