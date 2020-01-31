@@ -1,11 +1,13 @@
+# TODO:(nhendy) script level docstring
+
 import galleries
 import detectors
-import vectorgenerator
+import attribute_extractors
 import loaders
 from PIL import Image
-from cropper import crop_image
+from utils import crop_image
 import argparse
-
+import functools
 import os
 import numpy as np
 import cv2
@@ -21,7 +23,7 @@ def init_args():
     parser.add_argument("-d",
                         "--detector",
                         help="Object detection model",
-                        default='fasters_rcnn',
+                        default='FasterRCNN',
                         choices=detopt.keys())
     parser.add_argument("-r",
                         "--distance",
@@ -40,7 +42,7 @@ def init_args():
                         choices=galopt.keys())
     parser.add_argument("-v",
                         "--vect_gen",
-                        default='mgn',
+                        default='MGN',
                         help="Attribute extraction model",
                         choices=vecopt.keys())
     parser.add_argument("-i",
@@ -96,14 +98,14 @@ def loadPredefGal(path):
 
 
 ###############################################################
-def getVect(attribute_extractor, croppedimg):
+def get_vect(attribute_extractor, croppedimg):
     return attribute_extractor.compute_feat_vector(croppedimg)
 
 
 def main():
     args = init_args()
     detector = detectors.options[args.detector]()
-    vecgen = vectorgenerator.options[args.vectgen]()
+    attribute_extractor = attribute_extractors.options[args.vectgen]()
     dataloader = loaders.get_loader(args.video_path, args.loader,
                                     args.interval)
 
@@ -128,9 +130,10 @@ def main():
         detector,
     )
 
-    gallery = galleries.TriggerGallery(getVect)
-    gallery.addTrigger(trig1)
-    gallery.addTrigger(trig2)
+    gallery = galleries.TriggerGallery(
+        functools.partial(get_vect, attribute_extractor))
+    gallery.add_trigger(trig1)
+    gallery.add_trigger(trig2)
 
     # create trackers for each video/camera
     trackers = {vidnames: Sort() for vidnames in dataloader.getVidNames()}
