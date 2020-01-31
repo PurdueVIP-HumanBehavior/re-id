@@ -16,19 +16,29 @@ def get_loader(path, typeloader, interval):
 
     # if working with frames create loader with directories
     if options[typeloader] == "frames":
-        contents = [name for name in contents if os.path.isdir(os.path.join(path, name))]
-        frames = {cont: os.listdir("{}/{}".format(path, cont)) for cont in contents}
+        contents = [
+            name for name in contents
+            if os.path.isdir(os.path.join(path, name))
+        ]
+        frames = {
+            cont: os.listdir("{}/{}".format(path, cont))
+            for cont in contents
+        }
 
         # the least number of frames a video has
         minlen = min([len(cont) for cont in frames.values()])
 
         #clipping all videos to match
-        frames = {key: cont[0: minlen] for key, cont in frames.items()}
+        frames = {key: cont[0:minlen] for key, cont in frames.items()}
         return FrameLoader(path, frames, interval=interval)
 
     elif options[typeloader] == "videos":
-        contents = [name for name in contents if not os.path.isdir(os.path.join(path, name))]
+        contents = [
+            name for name in contents
+            if not os.path.isdir(os.path.join(path, name))
+        ]
         return VideoLoader(path, contents, interval=interval)
+
 
 class Loader:
     def __init__(self):
@@ -54,8 +64,14 @@ class FrameLoader(Loader):
     def __next__(self):
         if self.index >= self.length:
             raise StopIteration
-        frames = {key: frames[self.index] for key, frames in self.videos.items()}
-        frames = {key: cv2.imread(os.path.join(self.path, key, img)) for key, img in frames.items()}
+        frames = {
+            key: frames[self.index]
+            for key, frames in self.videos.items()
+        }
+        frames = {
+            key: cv2.imread(os.path.join(self.path, key, img))
+            for key, img in frames.items()
+        }
         intosend = self.index
         self.index = self.index + self.interval
         return intosend, frames
@@ -69,9 +85,15 @@ class VideoLoader(Loader):
         super().__init__()
         self.path = path
         names = ['.'.join(key.split('.')[:-1]) for key in vids]
-        self.videos = {name: cv2.VideoCapture(os.path.join(path, file)) for name, file in zip(names, vids)}
+        self.videos = {
+            name: cv2.VideoCapture(os.path.join(path, file))
+            for name, file in zip(names, vids)
+        }
         self.index = 0
-        self.length = min([vid.get(cv2.CAP_PROP_FRAME_COUNT) for name, vid in self.videos.items()])
+        self.length = min([
+            vid.get(cv2.CAP_PROP_FRAME_COUNT)
+            for name, vid in self.videos.items()
+        ])
         self.interval = interval
 
     def __iter__(self):
@@ -91,11 +113,3 @@ class VideoLoader(Loader):
 
     def __len__(self):
         return int(self.length / self.interval)
-
-
-options = {
-    defaultkey: "frames",
-    "frames": "frames",
-    "videos": "videos"
-}
-

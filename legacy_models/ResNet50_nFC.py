@@ -24,13 +24,11 @@ def weights_init_classifier(m):
         init.constant_(m.bias.data, 0.0)
 
 
-
 # Defines the new fc layer and classification layer
 # |--Linear--|--bn--|--relu--|--Linear--|
 class ClassBlock(nn.Module):
-    def __init__(self, input_dim, num_bottleneck = 512):
+    def __init__(self, input_dim, num_bottleneck=512):
         super(ClassBlock, self).__init__()
-
 
         add_block = []
         add_block += [nn.Linear(input_dim, num_bottleneck)]
@@ -66,7 +64,8 @@ class ResNet50_nFC(nn.Module):
         num_bottleneck = 512
 
         for c in range(self.class_num):
-            self.__setattr__('class_%d' % c, ClassBlock(self.num_ftrs, num_bottleneck) )
+            self.__setattr__('class_%d' % c,
+                             ClassBlock(self.num_ftrs, num_bottleneck))
 
     def forward(self, x):
         x = self.features(x)
@@ -74,5 +73,6 @@ class ResNet50_nFC(nn.Module):
             if c == 0:
                 pred = self.__getattr__('class_%d' % c)(x)
             else:
-                pred = torch.cat((pred, self.__getattr__('class_%d' % c)(x) ), dim=1)
+                pred = torch.cat((pred, self.__getattr__('class_%d' % c)(x)),
+                                 dim=1)
         return pred
