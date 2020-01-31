@@ -3,6 +3,7 @@ import cv2
 import cropper
 
 
+# TODO: (nhendy) docstring
 class BboxTrigger:
     def __init__(self, camera_id, ref_img, open_thresh, close_thresh,
                  check_coords, sample_coords, detector):
