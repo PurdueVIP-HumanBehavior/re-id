@@ -10,7 +10,7 @@ class BasicGallery:
         self.ids = list()
         self.distance = distancemetrics.options[opt.args.distance]
 
-    def getID(self, person):
+    def get_id(self, person):
         if len(self.people) == 0:
             self.ids.append(1)
             self.people.append(person)
@@ -34,7 +34,7 @@ class TriggerGallery:
         self.triggers = list()
         self.vectFunc = vectFunc
 
-    def addTrigger(self, trig):
+    def add_trigger(self, trig):
         self.triggers.append(trig)
 
     def update(self, frames):
