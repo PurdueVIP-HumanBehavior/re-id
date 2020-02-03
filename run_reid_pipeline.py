@@ -1,9 +1,8 @@
 # TODO:(nhendy) script level docstring
 
 import galleries
-import distancemetrics
-import detectors
-import attribute_extractors
+from detectors import FasterRCNN
+from attribute_extractors import MgnWrapper
 import loaders
 from PIL import Image
 from utils import crop_image
@@ -14,9 +13,10 @@ import sys
 import numpy as np
 import cv2
 from sort import Sort
-import bboxtrigger
+from bbox_trigger import BboxTrigger
 from scipy.stats import mode
 from tqdm import tqdm
+from constants import *
 
 
 def init_args():
@@ -25,37 +25,37 @@ def init_args():
                         "--detector",
                         help="Object detection model",
                         default='FasterRCNN',
-                        choices=detopt.keys())
+                        choices=['FasterRCNN'])
     parser.add_argument("-r",
                         "--distance",
                         default='dot_product',
                         help="Distance metric used for retrieval",
-                        choices=distopt.keys())
+                        choices=['dot_product'])
     parser.add_argument("-l",
                         "--loader",
                         default='video',
                         help="Type of data loading",
-                        choices=loadopt.keys())
+                        choices=['video'])
     parser.add_argument("-g",
                         "--gallery",
                         default='trigger',
                         help="Type of Gallery",
-                        choices=galopt.keys())
+                        choices=['trigger'])
     parser.add_argument("-v",
                         "--vect_gen",
                         default='MGN',
                         help="Attribute extraction model",
-                        choices=vecopt.keys())
+                        choices=['MGN'])
     parser.add_argument("-i",
                         "--interval",
                         default=2,
                         help="Sampling interval",
                         type=int)
-    parser.add_argument("-video_path",
+    parser.add_argument("--video_path",
                         required=True,
                         help="Path to the video to run the pipeline on")
     parser.add_argument(
-        "-ref_image_path",
+        "--ref_image_path",
         required=True,
         help="Path to the reference image used for triggering",
     )
@@ -105,13 +105,16 @@ def get_vect(attribute_extractor, croppedimg):
 
 def main():
     args = init_args()
-    detector = detectors.options[args.detector]()
-    attribute_extractor = attribute_extractors.options[args.vectgen]()
+
+    # TODO: (nour) start here
+    detector = FasterRCNN()
+    attribute_extractor = MgnWrapper('MGN.pt')
     dataloader = loaders.get_loader(args.video_path, args.loader,
                                     args.interval)
 
     ref_img = cv2.imread(args.ref_image_path)
-    trig1 = bboxtrigger.BboxTrigger(
+    trig1 = BboxTrigger(
+        # TODO: (nhendy) weird hardcoded name
         "NE_Moiz",
         ref_img,
         DOOR_CLOSED_THRESHOLD,
@@ -121,7 +124,8 @@ def main():
         detector,
     )
     # TODO : Thresholds might be different.
-    trig2 = bboxtrigger.BboxTrigger(
+    trig2 = BboxTrigger(
+        # TODO: (nhendy) weird hardcoded name
         "NE_Moiz",
         ref_img,
         DOOR_CLOSED_THRESHOLD,

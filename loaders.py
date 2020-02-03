@@ -15,29 +15,29 @@ def get_loader(path, typeloader, interval):
         raise ValueError("nothing in {}".format(path))
 
     # if working with frames create loader with directories
-    if options[typeloader] == "frames":
-        contents = [
-            name for name in contents
-            if os.path.isdir(os.path.join(path, name))
-        ]
-        frames = {
-            cont: os.listdir("{}/{}".format(path, cont))
-            for cont in contents
-        }
+    # if options[typeloader] == "frames":
+    #     contents = [
+    #         name for name in contents
+    #         if os.path.isdir(os.path.join(path, name))
+    #     ]
+    #     frames = {
+    #         cont: os.listdir("{}/{}".format(path, cont))
+    #         for cont in contents
+    #     }
 
-        # the least number of frames a video has
-        minlen = min([len(cont) for cont in frames.values()])
+    #     # the least number of frames a video has
+    #     minlen = min([len(cont) for cont in frames.values()])
 
-        #clipping all videos to match
-        frames = {key: cont[0:minlen] for key, cont in frames.items()}
-        return FrameLoader(path, frames, interval=interval)
+    #     #clipping all videos to match
+    #     frames = {key: cont[0:minlen] for key, cont in frames.items()}
+    #     return FrameLoader(path, frames, interval=interval)
 
-    elif options[typeloader] == "videos":
-        contents = [
-            name for name in contents
-            if not os.path.isdir(os.path.join(path, name))
-        ]
-        return VideoLoader(path, contents, interval=interval)
+    # elif options[typeloader] == "videos":
+    contents = [
+        name for name in contents
+        if not os.path.isdir(os.path.join(path, name))
+    ]
+    return VideoLoader(path, contents, interval=interval)
 
 
 class Loader:
