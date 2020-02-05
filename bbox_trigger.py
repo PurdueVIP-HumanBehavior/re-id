@@ -1,10 +1,14 @@
 from skimage.measure import compare_ssim
 import cv2
 from utils import crop_image
+import collections
 
 
 # TODO: (nhendy) docstring
 class BboxTrigger:
+    TriggerContext = collections.namedtuple(
+        "TriggerContext", ["triggered_flag", "bboxes", "sample_img"])
+
     def __init__(self, camera_id, ref_img, open_thresh, close_thresh,
                  check_coords, sample_coords, detector):
         self._camera_id = camera_id
@@ -16,7 +20,7 @@ class BboxTrigger:
         self._ref_img = cv2.cvtColor(crop_image(ref_img, check_coords),
                                      cv2.COLOR_BGR2GRAY)
 
-        self._check = 0
+        self._door_opened = False
 
     def update(self, frames):
         img = frames[self._camera_id]
@@ -24,14 +28,18 @@ class BboxTrigger:
                               cv2.COLOR_BGR2GRAY)
         score, diff = compare_ssim(self._ref_img, chkimg, full=True)
 
-        if self._check == 1:
+        if self._door_opened:
             if score > self._close_thresh:
                 sampimg = crop_image(img, self._sample_coords)
-                bboxes, scores = self._detector.getBboxes(sampimg)
-                self._check = 0
-                return True, bboxes, sampimg
+                bboxes, scores = self._detector.get_bboxes(sampimg)
+                self._door_opened = False
+                return TriggerContext(triggered_flag=True,
+                                      bboxes=bboxes,
+                                      sample_img=sampimg)
         else:
             if score < self._open_thresh:
-                self._check = 1
+                self._door_opened = True
 
-        return False, None, None
+        return TriggerContext(triggered_flag=False,
+                              bboxes=None,
+                              sample_img=None)

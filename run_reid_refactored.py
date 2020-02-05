@@ -59,48 +59,12 @@ def init_args():
         required=True,
         help="Path to the reference image used for triggering",
     )
+    parser.add_argument(
+        "--weights_path",
+        required=True,
+        help="Path to weights file for attribute extractor",
+    )
     return parser.parse_args()
-
-
-def get_vec_2_out(path, vecgen):
-    if os.path.isfile(path):
-        moiz = Image.open(path)
-        return vecgen.get_vect2(moiz)
-    return None
-
-
-def get_max_index(array, k=1):
-    maxnums = array[0:k]
-    maxinds = np.arange(0, k)
-    minins = min(maxnums)
-    mininin = maxnums.index(minins)
-    for i, val in enumerate(array):
-        if val > minins:
-            maxnums[mininin] = val
-            maxinds[mininin] = i
-            minins = min(maxnums)
-            mininin = maxnums.index(minins)
-    if len(maxnums) == 1:
-        return maxinds[0]
-    else:
-        return [x for _, x in sorted(zip(maxnums, maxinds), reverse=True)]
-
-
-def load_predef_gal(path, vecgen):
-    if not os.path.exists(path):
-        raise ValueError("path doesn't exist")
-    imgfile = os.listdir(path)
-    retval = list()
-    for name in imgfile:
-        na = ".".join(name.split(".")[:-1])
-        img = get_vec_2_out(os.path.join(path, name), vecgen)
-        retval.append(img)
-    return retval
-
-
-###############################################################
-def get_vect(attribute_extractor, croppedimg):
-    return attribute_extractor.compute_feat_vector(croppedimg)
 
 
 def main():
@@ -109,71 +73,52 @@ def main():
     # TODO: (nour) start here
     detector = FasterRCNN()
     attribute_extractor = MgnWrapper('MGN.pt')
+    tracker = Sort()
     dataloader = loaders.get_loader(args.video_path, args.loader,
                                     args.interval)
-
     ref_img = cv2.imread(args.ref_image_path)
-    trig1 = BboxTrigger(
-        # TODO: (nhendy) weird hardcoded name
-        "NE_Moiz",
-        ref_img,
-        DOOR_CLOSED_THRESHOLD,
-        DOOR_OPEN_THRESHOLD,
-        CHECK_OPEN_COORDS_ONE,
-        TRIGGER_ROI_COORDS_ONE,
-        detector,
-    )
-    # TODO : Thresholds might be different.
-    trig2 = BboxTrigger(
-        # TODO: (nhendy) weird hardcoded name
-        "NE_Moiz",
-        ref_img,
-        DOOR_CLOSED_THRESHOLD,
-        DOOR_OPEN_THRESHOLD,
-        CHECK_OPEN_COORDS_TWO,
-        TRIGGER_ROI_COORDS_TWO,
-        detector,
-    )
+    trigger_causes = [
+        BboxTrigger(
+            # TODO: (nhendy) weird hardcoded name
+            "NE_Moiz",
+            ref_img,
+            DOOR_CLOSED_THRESHOLD,
+            DOOR_OPEN_THRESHOLD,
+            CHECK_OPEN_COORDS_TWO,
+            TRIGGER_ROI_COORDS_TWO,
+            detector,
+        ),
+        BboxTrigger(
+            # TODO: (nhendy) weird hardcoded name
+            "NE_Moiz",
+            ref_img,
+            DOOR_CLOSED_THRESHOLD,
+            DOOR_OPEN_THRESHOLD,
+            CHECK_OPEN_COORDS_ONE,
+            TRIGGER_ROI_COORDS_ONE,
+            detector,
+        )
+    ]
 
-    gallery = galleries.TriggerGallery(
-        functools.partial(get_vect, attribute_extractor))
-    gallery.add_trigger(trig1)
-    gallery.add_trigger(trig2)
+    gallery = galleries.TriggerGallery(attribute_extractor, trigger_causes)
 
-    # create trackers for each video/camera
-    trackers = {vidnames: Sort() for vidnames in dataloader.get_vid_names()}
-    outfiles = {
-        vidnames: open(vidnames + "tmp.txt", "w")
-        for vidnames in dataloader.get_vid_names()
-    }
+    for frame in dataloader:
 
-    newfilenum = 0
-
-    ###############################################################
-
-    # iterate through frames of all cameras
-    for findex, frames in tqdm(dataloader):
-
-        # send frames from each camera to gallery to decide if references need to be captured based off triggering
         gallery.update(frames)
 
         # iterate through each camera
         for vidname, frame in frames.items():
             # get bounding boxes of all people
             boxes, scores = detector.get_bboxes(frame)
-            # if boxes.size != 0:
-            #     import ipdb
-            #     ipdb.set_trace(context=6)
             # send people bounding boxes to tracker
             # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
-            tracker = trackers[vidname]
-            dets = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
-            tracks, trksoff, newtrks = tracker.update(dets)
-            if tracks.size != 0 and boxes.size != 0:
-                import ipdb
-                ipdb.set_trace(context=8)
+            detections = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
+            matched_tracks, matched_kb_trackers, new_kb_trackers = tracker.update(
+                detections)
             # find indexes of returned bounding boxes that meet ideal ratio
             trkbboxes = np.array(tracks)
+
+            compute_aspect_ratio(track_boxes)
             widths = trkbboxes[:, 2] - trkbboxes[:, 0]
             heights = trkbboxes[:, 3] - trkbboxes[:, 1]
             aspectratio = heights / widths
@@ -191,6 +136,7 @@ def main():
                         newname = "tmpfiles/%07d.jpg" % newfilenum
                         newfilenum = newfilenum + 1
                         cv2.imwrite(newname, cropimg)
+                        # TODO: (nhendy) unnecessary
                         trksoff[ind].save_img(newname)
 
                 # write bounding box, frame number, and trackid to file

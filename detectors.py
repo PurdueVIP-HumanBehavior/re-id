@@ -30,24 +30,25 @@ class FasterRCNN:
             [torchvision.transforms.ToTensor()])
 
     def get_bboxes(self, frame):
-        import ipdb
-        ipdb.set_trace()
         img = self.transform(frame)  # Apply the transform to the image
         img = img.cuda()
         pred = self.model([img])  # Pass the image to the model
         pred_dict = pred[0]
         threshold = .5
+        # Get all bboxes for 'person' predictions with scores > threshold
         bboxes_ppl = [
             bbox for bbox, label, score in zip(pred_dict['boxes'].cuda(
             ), pred_dict['labels'].cuda(), pred_dict['scores'].cuda())
             if COCO_INSTANCE_CATEGORY_NAMES[label] == 'person'
             and score > threshold
         ]
+        # Get all scores for 'person' predictions with scores > threshold
         box_scr = np.array([
             scr.cpu().detach() for scr, label in zip(
                 pred_dict['scores'].cuda(), pred_dict['labels'].cuda()) if
             COCO_INSTANCE_CATEGORY_NAMES[label] == 'person' and scr > threshold
         ])
+        # Copy all bboxes to cpu and convert array of [(x1, y1), (x2, y2)]
         bboxes_ppl = np.array([[(box[0].cpu().detach(), box[1].cpu().detach()),
                                 (box[2].cpu().detach(), box[3].cpu().detach())]
                                for box in bboxes_ppl])

@@ -48,68 +48,21 @@ class Loader:
         return self.videos.keys()
 
 
-class FrameLoader(Loader):
-    def __init__(self, path, frames, interval=1):
-        super().__init__()
-        self.path = path
-        self.videos = frames
-        self.index = 0
-        self.length = len(list(frames.values())[0])
-        self.interval = interval
-
-    def __iter__(self):
-        self.index = 0
-        return self
-
-    def __next__(self):
-        if self.index >= self.length:
-            raise StopIteration
-        frames = {
-            key: frames[self.index]
-            for key, frames in self.videos.items()
-        }
-        frames = {
-            key: cv2.imread(os.path.join(self.path, key, img))
-            for key, img in frames.items()
-        }
-        intosend = self.index
-        self.index = self.index + self.interval
-        return intosend, frames
-
-    def __len__(self):
-        return int(self.length / self.interval)
-
-
 class VideoLoader(Loader):
     def __init__(self, path, vids, interval=1):
         super().__init__()
-        self.path = path
-        names = ['.'.join(key.split('.')[:-1]) for key in vids]
         self.videos = {
             name: cv2.VideoCapture(os.path.join(path, file))
             for name, file in zip(names, vids)
         }
-        self.index = 0
-        self.length = min([
-            vid.get(cv2.CAP_PROP_FRAME_COUNT)
-            for name, vid in self.videos.items()
-        ])
-        self.interval = interval
+        self._idx = 0
+        self._interval = interval
 
     def __iter__(self):
-        self.index = 0
-        return self
-
-    def __next__(self):
-        if self.index >= self.length:
-            raise StopIteration
-        retval = dict()
-        for name, vid in self.videos.items():
-            vid.set(cv2.CAP_PROP_POS_FRAMES, self.index)
-            _, retval[name] = vid.read()
-        indtosend = self.index
-        self.index = self.index + self.interval
-        return indtosend, retval
-
-    def __len__(self):
-        return int(self.length / self.interval)
+        while (1):
+            vid.set(cv2.CAP_PROP_POS_FRAMES, self._idx)
+            succes, frame = vid.read()
+            if not succes:
+                raise StopIteration
+            yield frame
+            self._idx += self._interval
