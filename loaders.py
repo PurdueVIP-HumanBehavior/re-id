@@ -50,12 +50,12 @@ class VideoLoader(Loader):
         return self
 
     def __next__(self):
-        if self.index >= self.length:
-            raise StopIteration
         retval = dict()
         for name, vid in self.videos.items():
             vid.set(cv2.CAP_PROP_POS_FRAMES, self.index)
-            _, retval[name] = vid.read()
+            success, retval[name] = vid.read()
+            if not success:
+                raise StopIteration
         indtosend = self.index
         self.index = self.index + self.interval
         return indtosend, retval

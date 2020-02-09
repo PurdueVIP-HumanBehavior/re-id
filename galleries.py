@@ -22,3 +22,7 @@ class TriggerGallery:
                     vect = self._attribute_extractor(cropimg)
                     self._people.append(cropimg)
                     self._feats.append(vect)
+
+    @property
+    def people(self):
+        return self._people

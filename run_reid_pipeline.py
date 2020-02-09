@@ -1,5 +1,5 @@
 # TODO:(nhendy) script level docstring
-
+import tempfile
 import galleries
 from detectors import FasterRCNN
 from attribute_extractors import MgnWrapper
@@ -64,6 +64,11 @@ def init_args():
         required=True,
         help="Path to MGN weigths",
     )
+    parser.add_argument(
+        "--gallery_path",
+        default="tmpgal/",
+        help="Path to gallery",
+    )
     return parser.parse_args()
 
 
@@ -91,19 +96,86 @@ def get_max_index(array, k=1):
         return [x for _, x in sorted(zip(maxnums, maxinds), reverse=True)]
 
 
-def load_predef_gallery_feat_vectors(imgs_dir, attribute_extractor):
-    if not os.path.exists(path):
+def load_gallery_feat_vectors(imgs_dir, attribute_extractor):
+    if not os.path.exists(imgs_dir):
         raise ValueError("path doesn't exist")
     feat_vectors = list()
     for name in os.listdir(imgs_dir):
         feat_vector = read_img_and_compute_feat_vector(
-            os.path.join(path, name), attribute_extractor)
+            os.path.join(imgs_dir, name), attribute_extractor)
         feat_vectors.append(feat_vector)
     return feat_vectors
 
 
 def cosine_similarity(x, y):
     return np.dot(x, y) / (np.sqrt(np.dot(x, x)) * np.sqrt(np.dot(y, y)))
+
+
+def write_gallery_imgs(imgs, path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    for i, img in enumerate(imgs):
+        cv2.imwrite(os.path.join(path, "{:5d}.jpg".format(i)), img)
+
+
+def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
+                             output_files):
+    newfilenum = 0
+
+    # iterate through frames of all cameras
+    for findex, frames in tqdm(video_loader):
+
+        # send frames from each camera to gallery to decide if references need to be captured based off triggering
+        gallery.update(frames)
+
+        # iterate through each camera
+        for vidname, frame in frames.items():
+            # get bounding boxes of all people
+            boxes, scores = detector.get_bboxes(frame)
+
+            # send people bounding boxes to tracker
+            # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
+            tracker = sort_trackers[vidname]
+            dets = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
+            matched_tracks, matched_kb_trackers, new_kb_trackers = tracker.update(
+                dets)
+
+            # find indexes of returned bounding boxes that meet ideal ratio
+            trkbboxes = np.array(matched_tracks)
+            widths = trkbboxes[:, 2] - trkbboxes[:, 0]
+            heights = trkbboxes[:, 3] - trkbboxes[:, 1]
+            aspectratio = heights / widths
+            readybools = np.isclose(aspectratio, 2, rtol=0.25)
+            indexes = np.arange(len(matched_tracks))[readybools]
+
+            # iterate through returned bounding boxes
+            for ind, trk in enumerate(matched_tracks):
+                box = ((int(trk[0]), int(trk[1])), (int(trk[2]), int(trk[3])))
+
+                # if bounding box meets ideal ratio, save image of person as reference
+                if ind in indexes:
+                    cropimg = crop_image(frame, box)
+                    if cropimg.size > 5:
+                        newname = "tmpfiles/%07d.jpg" % newfilenum
+                        newfilenum = newfilenum + 1
+                        cv2.imwrite(newname, cropimg)
+                        matched_kb_trackers[ind].save_img(newname)
+
+                # write bounding box, frame number, and trackid to file
+                output_files[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
+                                            (findex, trk[4], box[0][0],
+                                             box[0][1], box[1][0], box[1][1]))
+
+            # iterate through new tracks and add their current bounding box to list of track references
+            for trk in new_kb_trackers:
+                d = trk.get_state()[0]
+                box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
+                cropimg = crop_image(frame, box)
+                if cropimg.size > 5:
+                    newname = "tmpfiles/%07d.jpg" % newfilenum
+                    newfilenum = newfilenum + 1
+                    cv2.imwrite(newname, cropimg)
+                    trk.save_img(newname)
 
 
 def main():
@@ -142,11 +214,17 @@ def main():
 
     # create trackers for each video/camera
     trackers = {vidnames: Sort() for vidnames in dataloader.get_vid_names()}
-    outfiles = {
+    sort_trackers = {
+        vidnames: Sort()
+        for vidnames in dataloader.get_vid_names()
+    }
+    output_files = {
         vidnames: open(vidnames + "tmp.txt", "w")
         for vidnames in dataloader.get_vid_names()
     }
 
+    run_mot_and_fill_gallery(dataloader, gallery, detector, sort_trackers,
+                             output_files)
     newfilenum = 0
 
     ###############################################################
@@ -191,9 +269,9 @@ def main():
                         matched_kb_trackers[ind].save_img(newname)
 
                 # write bounding box, frame number, and trackid to file
-                outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
-                                        (findex, trk[4], box[0][0], box[0][1],
-                                         box[1][0], box[1][1]))
+                output_files[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
+                                            (findex, trk[4], box[0][0],
+                                             box[0][1], box[1][0], box[1][1]))
 
             # iterate through new tracks and add their current bounding box to list of track references
             for trk in new_kb_trackers:
@@ -207,11 +285,10 @@ def main():
                     trk.save_img(newname)
 
     # save images from gallery captured throughout video
-    for i, img in enumerate(gallery.people):
-        cv2.imwrite("tmpgal/%03d.jpg" % i, img)
+    write_gallery_imgs(gallery.people, args.gallery_path)
 
     # load up the gallery (an artifact of debugging)
-    gallery_feature_vectors = load_predef_gallery_feat_vectors(
+    gallery_feature_vectors = load_gallery_feat_vectors(
         "tmpgal/", attribute_extractor)
 
     # iterate through trackers for each camera
@@ -231,13 +308,12 @@ def main():
 
                 if uniqvect is not None:
                     # find out what is the most similar gallery image
-                    import ipdb
-                    ipdb.set_trace()
+                    # TODO: (nhendy) figure out if this is needs to be normalized
                     dists = [
-                        np.average(np.dot(uniqvect, np.transpose(out2)))
-                        for out2 in gallery_feature_vectors
+                        np.average(np.dot(uniqvect, np.transpose(feat_vector)))
+                        for feat_vector in gallery_feature_vectors
                     ]
-                    index = get_max_index(dists, k=1)
+                    index = dists.index(max(dists))
                     trk.reid.append(index)
 
             # creating a dictionary mapping the trackIDs to the Re-IDs based on most frequent Re-ID of a track
@@ -254,13 +330,15 @@ def main():
                 return val
 
         # the fancy numpy thing
-        convertnp = np.vectorize(convert)
+        track_id_to_reid_id = np.vectorize(
+            lambda value: convertdict.get(value, value))
 
         # use numpy thing to change trackIDs to Re-IDs in output file
-        outfiles[vidname][:, 1] = convertnp(outfiles[vidname][:, 1])
+        output_files[vidname][:, 1] = track_id_to_reid_id(
+            output_files[vidname][:, 1])
 
         # save
-        np.savetxt(vidname + ".txt", outfiles[vidname])
+        np.savetxt(vidname + ".txt", output_files[vidname])
 
 
 if __name__ == "__main__":
