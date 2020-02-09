@@ -13,6 +13,7 @@ from sort import Sort
 import bboxtrigger
 from scipy.stats import mode
 from tqdm import tqdm
+import time
 
 """
 TODO: 
@@ -72,16 +73,6 @@ def getVect(croppedimg):
     return vecgen.getVect2(croppedimg)
 
 
-def reid_it(img, gallery, track):
-    uniqvect = getVect(img)
-    if len(gallery.feats):
-        dists = [
-            np.average(np.dot(uniqvect, np.transpose(out2))) for out2 in gallery.feats
-        ]
-        index = getMaxIndex(dists, k=1)
-        track.reid.append(index)
-
-
 
 # setup triggers
 refimg = cv2.imread(firstimgpath)
@@ -110,33 +101,67 @@ outfiles = {
 newfilenum = 0
 
 ###############################################################
+# TIMING
+gallerytime = list()
+detectortime = list()
+trackertime = list()
+vecgentime = list()
+conversiontime = list()
+optboxtime = list()
+reid_ittime = list()
+bboxitertime = list()
+###############################################################
+
+def reid_it(img, gallery, track):
+    vecgentime.append(time.time())
+    uniqvect = getVect(img)
+    vecgentime[-1] = time.time() - vecgentime[-1]
+    if len(gallery.feats):
+        dists = [
+            np.average(np.dot(uniqvect, np.transpose(out2))) for out2 in gallery.feats
+        ]
+        index = getMaxIndex(dists, k=1)
+        track.reid.append(index)
 
 # iterate through frames of all cameras
 for findex, frames in tqdm(dataloader):
 
     # send frames from each camera to gallery to decide if references need to be captured based off triggering
+    gallerytime.append(time.time())
     gallery.update(frames)
+    gallerytime[-1] = time.time() - gallerytime[-1]
 
     # iterate through each camera
     for vidname, frame in frames.items():
         # get bounding boxes of all people
+        detectortime.append(time.time())
         boxes, scores = detector.getBboxes(frame)
+        detectortime[-1] = time.time() - gallerytime[-1]
 
         # send people bounding boxes to tracker
         # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
         tracker = trackers[vidname]
+
+        conversiontime.append(time.time())
         dets = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
+        conversiontime[-1] = time.time() - conversiontime[-1]
+
+        trackertime.append(time.time())
         tracks, trksoff, newtrks = tracker.update(dets)
+        trackertime[-1] = time.time() - trackertime[-1]
 
         # find indexes of returned bounding boxes that meet ideal ratio
+        optboxtime.append(time.time())
         trkbboxes = np.array(tracks)
         widths = trkbboxes[:, 2] - trkbboxes[:, 0]
         heights = trkbboxes[:, 3] - trkbboxes[:, 1]
         aspectratio = heights / widths
         readybools = np.isclose(aspectratio, 2, rtol=0.25)
         idealindexes = np.arange(len(tracks))[readybools]
+        optboxtime[-1] = time.time() - optboxtime[-1]
 
         # iterate through returned bounding boxes
+        bboxitertime.append(time.time())
         for ind, trk in enumerate(tracks):
             box = ((int(trk[0]), int(trk[1])), (int(trk[2]), int(trk[3])))
 
@@ -150,7 +175,9 @@ for findex, frames in tqdm(dataloader):
                     cv2.imwrite(newname, cropimg)
                     trksoff[ind].save_img(newname)
                     """
+                    reid_ittime.append(time.time())
                     reid_it(cropimg, gallery, trksoff[ind])
+                    reid_ittime[-1] = time.time() - reid_ittime[-1]
 
             # write bounding box, frame number, and trackid to file
             if len(trksoff[ind].reid) != 0:
@@ -172,7 +199,10 @@ for findex, frames in tqdm(dataloader):
             box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
             cropimg = crop_image(frame, box)
             if cropimg.size > 5:
+                reid_ittime.append(time.time())
                 reid_it(cropimg, gallery, trk)
+                reid_ittime[-1] = time.time() - reid_ittime[-1]
+        bboxitertime[-1] = time.time() - bboxitertime[-1]
 
 for key in outfiles:
     np.savetxt(key + ".txt", np.array(outfiles[key]), delimiter=",")
@@ -181,6 +211,23 @@ for key in outfiles:
 # save images from gallery captured throughout video
 for i, img in enumerate(gallery.people):
     cv2.imwrite("tmpgal/%03d.jpg" % i, img)
+
+gallerytime = list()
+detectortime = list()
+trackertime = list()
+vecgentime = list()
+conversiontime = list()
+optboxtime = list()
+reid_ittime = list()
+bboxitertime = list()
+print("gallery: ", sum(gallerytime))
+print("detector: ", sum(detectortime))
+print("tracker: ", sum(trackertime))
+print("vecgen: ", sum(vecgentime))
+print("conversion: ", sum(conversiontime))
+print('optbox: ', sum(optboxtime))
+print('re-id_it: ', sum(reid_ittime))
+print("bboxitertime: ", sum(bboxitertime))
 
 """
 # load up the gallery (an artifact of debugging)
