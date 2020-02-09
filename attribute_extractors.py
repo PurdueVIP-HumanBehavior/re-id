@@ -1,4 +1,4 @@
-from MGN import MGN
+from third_party.mgn import MGN
 import torch
 from torchvision import transforms
 import numpy as np

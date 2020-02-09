@@ -12,7 +12,7 @@ import os
 import sys
 import numpy as np
 import cv2
-from sort import Sort
+from third_party.sort import Sort
 from bbox_trigger import BboxTrigger
 from scipy.stats import mode
 from tqdm import tqdm
