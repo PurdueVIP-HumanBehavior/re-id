@@ -1,6 +1,7 @@
 from constants import defaultkey
 from utils import unitdotprod
 from utils import crop_image
+from bbox_trigger import TriggerContext
 
 
 class TriggerGallery:

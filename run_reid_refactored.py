@@ -4,6 +4,7 @@ import galleries
 from detectors import FasterRCNN
 from attribute_extractors import MgnWrapper
 import loaders
+from loaders import VideoLoader
 from PIL import Image
 from utils import crop_image
 import argparse
@@ -67,15 +68,18 @@ def init_args():
     return parser.parse_args()
 
 
+def compute_aspect_ratio():
+    pass
+
+
 def main():
     args = init_args()
 
     # TODO: (nour) start here
     detector = FasterRCNN()
-    attribute_extractor = MgnWrapper('MGN.pt')
+    attribute_extractor = MgnWrapper(args.weights_path)
     tracker = Sort()
-    dataloader = loaders.get_loader(args.video_path, args.loader,
-                                    args.interval)
+    dataloader = VideoLoader(path=args.video_path)
     ref_img = cv2.imread(args.ref_image_path)
     trigger_causes = [
         BboxTrigger(
@@ -103,119 +107,121 @@ def main():
     gallery = galleries.TriggerGallery(attribute_extractor, trigger_causes)
 
     for frame in dataloader:
-
-        gallery.update(frames)
+        import ipdb
+        ipdb.set_trace(context=8)
+        gallery.update(frame)
 
         # iterate through each camera
-        for vidname, frame in frames.items():
-            # get bounding boxes of all people
-            boxes, scores = detector.get_bboxes(frame)
-            # send people bounding boxes to tracker
-            # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
-            detections = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
-            matched_tracks, matched_kb_trackers, new_kb_trackers = tracker.update(
-                detections)
-            # find indexes of returned bounding boxes that meet ideal ratio
-            trkbboxes = np.array(tracks)
+        # for vidname, frame in frames.items():
+        #     # get bounding boxes of all people
+        boxes, scores = detector.get_bboxes(frame)
+        # send people bounding boxes to tracker
+        # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
+        detections = np.column_stack((np.reshape(boxes, [-1, 4]), scores))
+        matched_tracks, matched_kb_trackers, new_kb_trackers = tracker.update(
+            detections)
+        # find indexes of returned bounding boxes that meet ideal ratio
+        trkbboxes = np.array(tracks)
+        import ipdb
+        ipdb.set_trace(context=7)
+        aspect_ration = compute_aspect_ratio(track_boxes)
+        widths = trkbboxes[:, 2] - trkbboxes[:, 0]
+        heights = trkbboxes[:, 3] - trkbboxes[:, 1]
+        aspectratio = heights / widths
+        readybools = np.isclose(aspectratio, 2, rtol=0.25)
+        indexes = np.arange(len(tracks))[readybools]
 
-            compute_aspect_ratio(track_boxes)
-            widths = trkbboxes[:, 2] - trkbboxes[:, 0]
-            heights = trkbboxes[:, 3] - trkbboxes[:, 1]
-            aspectratio = heights / widths
-            readybools = np.isclose(aspectratio, 2, rtol=0.25)
-            indexes = np.arange(len(tracks))[readybools]
+        # iterate through returned bounding boxes
+        for ind, trk in enumerate(tracks):
+            box = ((int(trk[0]), int(trk[1])), (int(trk[2]), int(trk[3])))
 
-            # iterate through returned bounding boxes
-            for ind, trk in enumerate(tracks):
-                box = ((int(trk[0]), int(trk[1])), (int(trk[2]), int(trk[3])))
-
-                # if bounding box meets ideal ratio, save image of person as reference
-                if ind in indexes:
-                    cropimg = crop_image(frame, box)
-                    if cropimg.size > 5:
-                        newname = "tmpfiles/%07d.jpg" % newfilenum
-                        newfilenum = newfilenum + 1
-                        cv2.imwrite(newname, cropimg)
-                        # TODO: (nhendy) unnecessary
-                        trksoff[ind].save_img(newname)
-
-                # write bounding box, frame number, and trackid to file
-                outfiles[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
-                                        (findex, trk[4], box[0][0], box[0][1],
-                                         box[1][0], box[1][1]))
-
-            # iterate through new tracks and add their current bounding box to list of track references
-            for trk in newtrks:
-                d = trk.get_state()[0]
-                box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
+            # if bounding box meets ideal ratio, save image of person as reference
+            if ind in indexes:
                 cropimg = crop_image(frame, box)
                 if cropimg.size > 5:
                     newname = "tmpfiles/%07d.jpg" % newfilenum
                     newfilenum = newfilenum + 1
                     cv2.imwrite(newname, cropimg)
-                    trk.save_img(newname)
+                    # TODO: (nhendy) unnecessary
+                    trksoff[ind].save_img(newname)
+
+            # write bounding box, frame number, and trackid to file
+            outfiles[vidname].write(
+                "%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
+                (findex, trk[4], box[0][0], box[0][1], box[1][0], box[1][1]))
+
+        # iterate through new tracks and add their current bounding box to list of track references
+        for trk in newtrks:
+            d = trk.get_state()[0]
+            box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
+            cropimg = crop_image(frame, box)
+            if cropimg.size > 5:
+                newname = "tmpfiles/%07d.jpg" % newfilenum
+                newfilenum = newfilenum + 1
+                cv2.imwrite(newname, cropimg)
+                trk.save_img(newname)
 
     # save images from gallery captured throughout video
-    for i, img in enumerate(gallery.people):
-        cv2.imwrite("tmpgal/%03d.jpg" % i, img)
+    # for i, img in enumerate(gallery.people):
+    #     cv2.imwrite("tmpgal/%03d.jpg" % i, img)
 
     # load up the gallery (an artifact of debugging)
-    mangall = load_predef_gal("tmpgal/", vecgen)
+    # mangall = load_predef_gal("tmpgal/", vecgen)
 
-    # write filename for all reference images for each track (artifact of debugging)
-    for key in outfiles:
-        outfiles[key].close()
-        outfiles[key] = np.loadtxt(key + "tmp.txt", delimiter=",")
+    # # write filename for all reference images for each track (artifact of debugging)
+    # for key in outfiles:
+    #     outfiles[key].close()
+    #     outfiles[key] = np.loadtxt(key + "tmp.txt", delimiter=",")
 
-        traks = trackers[key]
-        tracks = traks.trackers + traks.rejects
-        file = open(key + "tmp2.txt", "w")
-        for trk in tracks:
-            file.write(str(trk.id) + " " + " ".join(trk.imgfiles) + "\n")
-        file.close()
+    #     traks = trackers[key]
+    #     tracks = traks.trackers + traks.rejects
+    #     file = open(key + "tmp2.txt", "w")
+    #     for trk in tracks:
+    #         file.write(str(trk.id) + " " + " ".join(trk.imgfiles) + "\n")
+    #     file.close()
 
-    # iterate through trackers for each camera
-    for vidname, sorto in trackers.items():
-        tracks = sorto.trackers + sorto.rejects
-        convertdict = dict()
+    # # iterate through trackers for each camera
+    # for vidname, sorto in trackers.items():
+    #     tracks = sorto.trackers + sorto.rejects
+    #     convertdict = dict()
 
-        # iterate through tracks within each tracker
-        for trk in tqdm(tracks):
-            reidimgs = trk.imgfiles
+    #     # iterate through tracks within each tracker
+    #     for trk in tqdm(tracks):
+    #         reidimgs = trk.imgfiles
 
-            # iterate through every reference image for this track
-            for img in reidimgs:
-                # get feature vector of image
-                uniqvect = get_vec_2_out(img, vecgen)
+    #         # iterate through every reference image for this track
+    #         for img in reidimgs:
+    #             # get feature vector of image
+    #             uniqvect = get_vec_2_out(img, vecgen)
 
-                if uniqvect is not None:
-                    # find out what is the most similar gallery image
-                    dists = [
-                        np.average(np.dot(uniqvect, np.transpose(out2)))
-                        for out2 in mangall
-                    ]
-                    index = get_max_index(dists, k=1)
-                    trk.reid.append(index)
+    #             if uniqvect is not None:
+    #                 # find out what is the most similar gallery image
+    #                 dists = [
+    #                     np.average(np.dot(uniqvect, np.transpose(out2)))
+    #                     for out2 in mangall
+    #                 ]
+    #                 index = get_max_index(dists, k=1)
+    #                 trk.reid.append(index)
 
-            # creating a dictionary mapping the trackIDs to the Re-IDs based on most frequent Re-ID of a track
-            if len(trk.reid) > 0:
-                convertdict[trk.id] = mode(trk.reid)[0][0]
+    #         # creating a dictionary mapping the trackIDs to the Re-IDs based on most frequent Re-ID of a track
+    #         if len(trk.reid) > 0:
+    #             convertdict[trk.id] = mode(trk.reid)[0][0]
 
-        # utility function to do fancy numpy thing
-        def convert(val):
-            if val in convertdict:
-                return convertdict[val]
-            else:
-                return val
+    #     # utility function to do fancy numpy thing
+    #     def convert(val):
+    #         if val in convertdict:
+    #             return convertdict[val]
+    #         else:
+    #             return val
 
-        # the fancy numpy thing
-        convertnp = np.vectorize(convert)
+    #     # the fancy numpy thing
+    #     convertnp = np.vectorize(convert)
 
-        # use numpy thing to change trackIDs to Re-IDs in output file
-        outfiles[vidname][:, 1] = convertnp(outfiles[vidname][:, 1])
+    #     # use numpy thing to change trackIDs to Re-IDs in output file
+    #     outfiles[vidname][:, 1] = convertnp(outfiles[vidname][:, 1])
 
-        # save
-        np.savetxt(vidname + ".txt", outfiles[vidname])
+    #     # save
+    #     np.savetxt(vidname + ".txt", outfiles[vidname])
 
 
 if __name__ == "__main__":

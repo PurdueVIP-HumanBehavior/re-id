@@ -3,12 +3,12 @@ import cv2
 from utils import crop_image
 import collections
 
+TriggerContext = collections.namedtuple(
+    "TriggerContext", ["triggered_flag", "bboxes", "sample_img"])
+
 
 # TODO: (nhendy) docstring
 class BboxTrigger:
-    TriggerContext = collections.namedtuple(
-        "TriggerContext", ["triggered_flag", "bboxes", "sample_img"])
-
     def __init__(self, camera_id, ref_img, open_thresh, close_thresh,
                  check_coords, sample_coords, detector):
         self._camera_id = camera_id
@@ -22,8 +22,8 @@ class BboxTrigger:
 
         self._door_opened = False
 
-    def update(self, frames):
-        img = frames[self._camera_id]
+    def update(self, frame):
+        img = frame
         chkimg = cv2.cvtColor(crop_image(img, self._check_coords),
                               cv2.COLOR_BGR2GRAY)
         score, diff = compare_ssim(self._ref_img, chkimg, full=True)
