@@ -30,8 +30,6 @@ class FasterRCNN:
             [torchvision.transforms.ToTensor()])
 
     def get_bboxes(self, frame):
-        import ipdb
-        ipdb.set_trace()
         img = self.transform(frame)  # Apply the transform to the image
         img = img.cuda()
         pred = self.model([img])  # Pass the image to the model

@@ -27,7 +27,7 @@ class BboxTrigger:
         if self._check == 1:
             if score > self._close_thresh:
                 sampimg = crop_image(img, self._sample_coords)
-                bboxes, scores = self._detector.getBboxes(sampimg)
+                bboxes, scores = self._detector.get_bboxes(sampimg)
                 self._check = 0
                 return True, bboxes, sampimg
         else:
