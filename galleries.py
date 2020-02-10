@@ -1,56 +1,28 @@
 from constants import defaultkey
-import distancemetrics
-import cropper
+from utils import unitdotprod
+from utils import crop_image
 
-threshold = .7
-
-class BasicGallery:
-    def __init__(self):
-        self.people = list()
-        self.ids = list()
-        self.distance = distancemetrics.options[opt.args.distance]
-
-    def getID(self, person):
-        if len(self.people) == 0:
-            self.ids.append(1)
-            self.people.append(person)
-            return 1
-
-        # calculates distance between query (person) and stored people
-        dists = [self.distance(person, pers) for pers in self.people]
-        minval = max(dists)
-        if minval > threshold:
-            return self.ids[dists.index(minval)]
-        else:
-            id = max(self.ids) + 1
-            self.ids.append(id)
-            self.people.append(person)
-            return id
 
 class TriggerGallery:
-    def __init__(self, vectFunc):
-        self.people = list()
-        self.feats = list()
-        self.triggers = list()
-        self.vectFunc = vectFunc
+    def __init__(self, attribute_extractor, triggers):
+        self._people = list()
+        self._feats = list()
+        self._triggers = triggers
+        self._attribute_extractor = attribute_extractor
 
-    def addTrigger(self, trig):
-        self.triggers.append(trig)
+    def add_trigger(self, trig):
+        self._triggers.append(trig)
 
     def update(self, frames):
-        for trig in self.triggers:
+        for trig in self._triggers:
             add, boxes, img = trig.update(frames)
             if add:
                 for box in boxes:
-                    cropimg = cropper.crop_image(img, box)
-                    vect = self.vectFunc(cropimg)
-                    self.people.append(cropimg)
-                    self.feats.append(vect)
+                    cropimg = crop_image(img, box)
+                    vect = self._attribute_extractor(cropimg)
+                    self._people.append(cropimg)
+                    self._feats.append(vect)
 
-
-
-
-options = {
-    defaultkey: BasicGallery,
-    "basic": BasicGallery
-}
+    @property
+    def people(self):
+        return self._people
