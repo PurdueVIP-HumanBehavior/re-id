@@ -20,53 +20,6 @@ def main():
     imgs = os.listdir(path)
     imgs = [os.path.join(path, obj) for obj in imgs]
 
-
-def create_vid(savename, vid, outtxt, view=False):
-    """
-    creates a video using the out video
-    :param savename: the name to save the video as
-    :param vid: the video file path
-    :param outtxt: the output text file
-    :return: 1 for successful; 0 for failure
-    """
-    if not os.path.exists(vid):
-        print("vid " + vid + " does not exist")
-    invid = cv2.VideoCapture(savename)
-    if invid.isOpened() == False:
-        print("error opening file " + savename)
-
-    if not os.path.exists(outtxt):
-        print("outtxt " + outtxt + "does not exist")
-    output = np.loadtxt(outtxt, delimiter=delimiter)
-    uniqframenums = np.unique(output[frameind])
-    interval = np.average(uniqframenums[1:] - uniqframenums[:-1]).astype(np.int64)
-
-    while os.path.exists(savename):
-        decision = input("the video file " + savename + " already exists. Want to overwrite it?[y/n]").lower()
-        if decision == 'n':
-            savename = input("new file name: ")
-    vidfps = invid.get(cv2.CAP_PROP_FPS) / interval
-    outvid = cv2.VideoWriter(savename + '.avi',
-                    cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
-                    vidfps, (invid.get(cv2.CAP_PROP_FRAME_WIDTH), invid.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-
-    for frame in uniqframenums:
-        framerows = output[output[:, frameind]==frame, :]
-        invid.set(cv2.CAP_PROP_POS_FRAMES, frame)
-        ret, img = invid.read()
-        if ret:
-            bboxes = framerows[:, x1ind:(y2ind+1)]
-            ids = framerows[:, idind]
-            nimg = paint_frame(img, bboxes, ids)
-            if view:
-                cv2.imshow("savename", nimg)
-                cv2.waitKey(1 / vidfps)
-            outvid.write(nimg)
-        else:
-            break
-
-    outvid.release()
-
 def create_vid(savename, vid, outtxt, view=False):
     """
     creates a video using the out video
