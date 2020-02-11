@@ -176,7 +176,7 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
 
 
 def run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
-                                  output_files):
+                                  output_files,gallery_feature_vector):
     # Iterate through trackers for each camera
     for vidname, sorto in sort_trackers.items():
         tracks = sorto.trackers + sorto.rejects
@@ -278,7 +278,7 @@ def main():
 
     # Run reid model and map track ids to reid ids
     run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
-                                  output_files)
+                                  output_files,gallery_feature_vector)
 
 
 if __name__ == "__main__":
