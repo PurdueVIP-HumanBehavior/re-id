@@ -176,7 +176,7 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
 
 
 def run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
-                                  output_files,gallery_feature_vector):
+                                  output_files, gallery_feature_vectors):
     # Iterate through trackers for each camera
     for vidname, sorto in sort_trackers.items():
         tracks = sorto.trackers + sorto.rejects
@@ -216,6 +216,14 @@ def run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
 
         # Save
         np.savetxt(vidname + ".txt", output_files[vidname])
+
+
+def convert_files_to_numpy(temp_dir, output_files):
+    for video_name, file_handle in output_files.items():
+        file_handle.close()
+        output_files[video_name] = np.loadtxt(os.path.join(
+            temp_dir, "{}.txt".format(video_name)),
+                                              delimiter=',')
 
 
 def main():
@@ -276,9 +284,13 @@ def main():
     gallery_feature_vectors = load_gallery_feat_vectors(
         args.gallery_path, attribute_extractor)
 
+    # TODO: (nhendy) this is needed because downstream functions
+    # assume the dict contain numpy arrays not files. Remove later
+    convert_files_to_numpy(temp_dir, output_files)
+
     # Run reid model and map track ids to reid ids
     run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
-                                  output_files,gallery_feature_vector)
+                                  output_files, gallery_feature_vectors)
 
 
 if __name__ == "__main__":
