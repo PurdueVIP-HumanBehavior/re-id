@@ -196,7 +196,6 @@ def main():
                 box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
                 cropimg = crop_image(frame, box)
                 if cropimg.size > 5:
-                    """
                     newname = "tmpfiles/%07d.jpg" % newfilenum
                     newfilenum = newfilenum + 1
                     cv2.imwrite(newname, cropimg)

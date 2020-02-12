@@ -73,6 +73,7 @@ def getVect(croppedimg):
 
 
 
+
 # setup triggers
 refimg = cv2.imread(firstimgpath)
 chkcoord1 = [[1471, 67], [1487, 117]]
@@ -117,7 +118,11 @@ def reid_it(img, gallery, track):
     vecgentime[-1] = time.time() - vecgentime[-1]
     if len(gallery.feats):
         dists = [
+<<<<<<< HEAD
             np.average(np.dot(uniqvect, np.transpose(out2))) for out2 in gallery._feats
+=======
+            np.average(np.dot(uniqvect, np.transpose(out2))) for out2 in gallery.feats
+>>>>>>> 91d2be736a59507a2955d3ffe5d16457d29123a5
         ]
         index = getMaxIndex(dists, k=1)
         track.reid.append(index)
@@ -134,7 +139,11 @@ for findex, frames in tqdm(dataloader):
     for vidname, frame in frames.items():
         # get bounding boxes of all people
         detectortime.append(time.time())
+<<<<<<< HEAD
         boxes, scores = detector.get_bboxes(frame)
+=======
+        boxes, scores = detector.getBboxes(frame)
+>>>>>>> 91d2be736a59507a2955d3ffe5d16457d29123a5
         detectortime[-1] = time.time() - gallerytime[-1]
 
         # send people bounding boxes to tracker
@@ -211,6 +220,17 @@ for key in outfiles:
 for i, img in enumerate(gallery._people):
     cv2.imwrite("tmpgal/%03d.jpg" % i, img)
 
+<<<<<<< HEAD
+=======
+gallerytime = list()
+detectortime = list()
+trackertime = list()
+vecgentime = list()
+conversiontime = list()
+optboxtime = list()
+reid_ittime = list()
+bboxitertime = list()
+>>>>>>> 91d2be736a59507a2955d3ffe5d16457d29123a5
 print("gallery: ", sum(gallerytime))
 print("detector: ", sum(detectortime))
 print("tracker: ", sum(trackertime))
