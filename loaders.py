@@ -15,7 +15,7 @@ def get_loader(path, typeloader, interval):
         raise ValueError("nothing in {}".format(path))
 
     # if working with frames create loader with directories
-    if options[typeloader] == "frames":
+    if typeloader == "frames":
         contents = [
             name for name in contents
             if os.path.isdir(os.path.join(path, name))
@@ -32,7 +32,7 @@ def get_loader(path, typeloader, interval):
         frames = {key: cont[0:minlen] for key, cont in frames.items()}
         return FrameLoader(path, frames, interval=interval)
 
-    elif options[typeloader] == "videos":
+    elif typeloader == "videos":
         contents = [
             name for name in contents
             if not os.path.isdir(os.path.join(path, name))

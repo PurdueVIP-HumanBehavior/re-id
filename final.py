@@ -28,7 +28,7 @@ firstimgpath = "../reid-data/msee2/NE_Moiz/00000.jpg"
 
 detector = detectors.FasterRCNN()
 vecgen = attribute_extractors.MgnWrapper('')
-dataloader = loaders.get_loader(datapath, args.loader, args.interval)
+dataloader = loaders.get_loader(datapath, "videos", 2)
 
 
 def getvec2out(path, vecgen):
@@ -77,12 +77,12 @@ def getVect(croppedimg):
 refimg = cv2.imread(firstimgpath)
 chkcoord1 = [[1471, 67], [1487, 117]]
 sampcoord1 = [[1348, 72], [1640, 671]]
-trig1 = bboxtrigger.BboxTrigger(
+trig1 = bbox_trigger.BboxTrigger(
     "NE_Moiz", refimg, 0.27, 0.87, chkcoord1, sampcoord1, detector
 )
 chkcoord2 = [[354, 70], [375, 110]]
 sampcoord2 = [[114, 64], [600, 722]]
-trig2 = bboxtrigger.BboxTrigger(
+trig2 = bbox_trigger.BboxTrigger(
     "NE_Moiz", refimg, 0.27, 0.84, chkcoord2, sampcoord2, detector
 )
 
