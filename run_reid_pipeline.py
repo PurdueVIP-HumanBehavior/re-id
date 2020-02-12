@@ -218,6 +218,14 @@ def run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
         np.savetxt(vidname + ".txt", output_files[vidname])
 
 
+def convert_files_to_numpy(temp_dir, output_files):
+    for video_name, file_handle in output_files.items():
+        file_handle.close()
+        output_files[video_name] = np.loadtxt(os.path.join(
+            temp_dir, "{}.txt".format(video_name)),
+                                              delimiter=',')
+
+
 def main():
     args = init_args()
 
@@ -275,6 +283,10 @@ def main():
     # Load up the gallery feature vectors
     gallery_feature_vectors = load_gallery_feat_vectors(
         args.gallery_path, attribute_extractor)
+
+    # TODO: (nhendy) this is needed because downstream functions
+    # assume the dict contain numpy arrays not files. Remove later
+    convert_files_to_numpy(temp_dir, output_files)
 
     # Run reid model and map track ids to reid ids
     run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
