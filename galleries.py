@@ -1,6 +1,5 @@
 from constants import defaultkey
-import distancemetrics
-import cropper
+from utils import crop_image
 
 # TODO: (nhendy) what is this threshold for?
 threshold = .7
@@ -10,7 +9,7 @@ class BasicGallery:
     def __init__(self):
         self._people = list()
         self._ids = list()
-        self._distance = distancemetrics.options[opt.args.distance]
+        # self._distance = distancemetrics.options[opt.args.distance]
 
     def get_id(self, person):
         if len(self._people) == 0:
@@ -46,7 +45,7 @@ class TriggerGallery:
             add, boxes, img = trig.update(frames)
             if add:
                 for box in boxes:
-                    cropimg = cropper.crop_image(img, box)
+                    cropimg = crop_image(img, box)
                     vect = self._attribute_extractor(cropimg)
                     self._people.append(cropimg)
                     self._feats.append(vect)
