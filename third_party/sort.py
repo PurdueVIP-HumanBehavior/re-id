@@ -21,6 +21,8 @@ from __future__ import print_function
 from numba import jit
 import os.path
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from skimage import io
