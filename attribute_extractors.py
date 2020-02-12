@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 from PIL import Image
 import os
+from constants import *
 
 
 def ndarraytopil(img):
@@ -19,7 +20,7 @@ class MgnWrapper:
             raise ValueError(
                 "Weights path given {} doesn't exist".format(weights_path))
         self.model = MGN()
-        self.model.load_state_dict(torch.load('model.pt'))
+        self.model.load_state_dict(torch.load(weights_path))
         self.model.cuda()
         self.model.eval()
         self.transform = transforms.Compose([

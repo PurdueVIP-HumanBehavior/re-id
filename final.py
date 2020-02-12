@@ -23,11 +23,11 @@ TODO:
     - implement only one ID per frame constraint
 """
 
-datapath = "../reid-data/msee2"
-firstimgpath = "../reid-data/msee2/NE_Moiz/00000.jpg"
+datapath = "/local/b/cam2/data/HB/S20/msee_old/"
+firstimgpath = "00000.jpg"
 
 detector = detectors.FasterRCNN()
-vecgen = attribute_extractors.MgnWrapper('')
+vecgen = attribute_extractors.MgnWrapper('/local/b/mrasheed/model_weights/MGN.pt')
 dataloader = loaders.get_loader(datapath, "videos", 2)
 
 
@@ -91,10 +91,10 @@ gallery.add_trigger(trig1)
 gallery.add_trigger(trig2)
 
 # create trackers for each video/camera
-trackers = {vidnames: Sort() for vidnames in dataloader.getVidNames()}
+trackers = {vidnames: Sort() for vidnames in dataloader.get_vid_names()}
 outfiles = {
     #vidnames: open(vidnames + ".txt", "w") for vidnames in dataloader.getVidNames()
-    vidnames: list() for vidnames in dataloader.getVidNames()
+    vidnames: list() for vidnames in dataloader.get_vid_names()
 }
 
 newfilenum = 0
@@ -109,13 +109,14 @@ conversiontime = list()
 optboxtime = list()
 reid_ittime = list()
 bboxitertime = list()
+seconditertime = list()
 ###############################################################
 
 def reid_it(img, gallery, track):
     vecgentime.append(time.time())
     uniqvect = getVect(img)
     vecgentime[-1] = time.time() - vecgentime[-1]
-    if len(gallery.feats):
+    if len(gallery._feats):
         dists = [
             np.average(np.dot(uniqvect, np.transpose(out2))) for out2 in gallery._feats
         ]
@@ -123,6 +124,7 @@ def reid_it(img, gallery, track):
         track.reid.append(index)
 
 # iterate through frames of all cameras
+mainitertime = time.time()
 for findex, frames in tqdm(dataloader):
 
     # send frames from each camera to gallery to decide if references need to be captured based off triggering
@@ -131,11 +133,12 @@ for findex, frames in tqdm(dataloader):
     gallerytime[-1] = time.time() - gallerytime[-1]
 
     # iterate through each camera
+    seconditertime.append(time.time())
     for vidname, frame in frames.items():
         # get bounding boxes of all people
         detectortime.append(time.time())
         boxes, scores = detector.get_bboxes(frame)
-        detectortime[-1] = time.time() - gallerytime[-1]
+        detectortime[-1] = time.time() - detectortime[-1]
 
         # send people bounding boxes to tracker
         # get three things: normal Sort output (tracking bounding boxes it wants to send), corresponding track objects, and objects of new tracks
@@ -202,6 +205,9 @@ for findex, frames in tqdm(dataloader):
                 reid_it(cropimg, gallery, trk)
                 reid_ittime[-1] = time.time() - reid_ittime[-1]
         bboxitertime[-1] = time.time() - bboxitertime[-1]
+    seconditertime[-1] = time.time() - seconditertime[-1]
+
+mainitertime = time.time() - mainitertime        
 
 for key in outfiles:
     np.savetxt(key + ".txt", np.array(outfiles[key]), delimiter=",")
@@ -211,6 +217,7 @@ for key in outfiles:
 for i, img in enumerate(gallery._people):
     cv2.imwrite("tmpgal/%03d.jpg" % i, img)
 
+print("mainloop time: ", mainitertime)
 print("gallery: ", sum(gallerytime))
 print("detector: ", sum(detectortime))
 print("tracker: ", sum(trackertime))
@@ -219,6 +226,7 @@ print("conversion: ", sum(conversiontime))
 print('optbox: ', sum(optboxtime))
 print('re-id_it: ', sum(reid_ittime))
 print("bboxitertime: ", sum(bboxitertime))
+print("seconditertime: ", sum(seconditertime))
 
 """
 # load up the gallery (an artifact of debugging)
