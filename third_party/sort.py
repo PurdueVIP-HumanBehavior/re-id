@@ -21,6 +21,8 @@ from __future__ import print_function
 from numba import jit
 import os.path
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from skimage import io
@@ -45,11 +47,8 @@ def iou(bb_test, bb_gt):
     w = np.maximum(0.0, xx2 - xx1)
     h = np.maximum(0.0, yy2 - yy1)
     wh = w * h
-    o = wh / (
-        (bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1])
-        + (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1])
-        - wh
-    )
+    o = wh / ((bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1]) +
+              (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1]) - wh)
     return o
 
 
@@ -77,12 +76,13 @@ def convert_x_to_bbox(x, score=None):
     h = x[2] / w
     if score == None:
         return np.array(
-            [x[0] - w / 2.0, x[1] - h / 2.0, x[0] + w / 2.0, x[1] + h / 2.0]
-        ).reshape((1, 4))
+            [x[0] - w / 2.0, x[1] - h / 2.0, x[0] + w / 2.0,
+             x[1] + h / 2.0]).reshape((1, 4))
     else:
-        return np.array(
-            [x[0] - w / 2.0, x[1] - h / 2.0, x[0] + w / 2.0, x[1] + h / 2.0, score]
-        ).reshape((1, 5))
+        return np.array([
+            x[0] - w / 2.0, x[1] - h / 2.0, x[0] + w / 2.0, x[1] + h / 2.0,
+            score
+        ]).reshape((1, 5))
 
 
 class KalmanBoxTracker(object):
@@ -98,30 +98,26 @@ class KalmanBoxTracker(object):
     """
         # define constant velocity model
         self.kf = KalmanFilter(dim_x=7, dim_z=4)
-        self.kf.F = np.array(
-            [
-                [1, 0, 0, 0, 1, 0, 0],
-                [0, 1, 0, 0, 0, 1, 0],
-                [0, 0, 1, 0, 0, 0, 1],
-                [0, 0, 0, 1, 0, 0, 0],
-                [0, 0, 0, 0, 1, 0, 0],
-                [0, 0, 0, 0, 0, 1, 0],
-                [0, 0, 0, 0, 0, 0, 1],
-            ]
-        )
-        self.kf.H = np.array(
-            [
-                [1, 0, 0, 0, 0, 0, 0],
-                [0, 1, 0, 0, 0, 0, 0],
-                [0, 0, 1, 0, 0, 0, 0],
-                [0, 0, 0, 1, 0, 0, 0],
-            ]
-        )
+        self.kf.F = np.array([
+            [1, 0, 0, 0, 1, 0, 0],
+            [0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 1, 0, 0, 0, 1],
+            [0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 1],
+        ])
+        self.kf.H = np.array([
+            [1, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0],
+        ])
 
         self.kf.R[2:, 2:] *= 10.0
         self.kf.P[
-            4:, 4:
-        ] *= 1000.0  # give high uncertainty to the unobservable initial velocities
+            4:,
+            4:] *= 1000.0  # give high uncertainty to the unobservable initial velocities
         self.kf.P *= 10.0
         self.kf.Q[-1, -1] *= 0.01
         self.kf.Q[4:, 4:] *= 0.01
@@ -175,10 +171,10 @@ class KalmanBoxTracker(object):
 
 def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
     """
-  Assigns detections to tracked object (both represented as bounding boxes)
+    Assigns detections to tracked object (both represented as bounding boxes)
 
-  Returns 3 lists of matches, unmatched_detections and unmatched_trackers
-  """
+    Returns 3 lists of matches, unmatched_detections and unmatched_trackers
+    """
     if len(trackers) == 0:
         return (
             np.empty((0, 2), dtype=int),
@@ -214,7 +210,8 @@ def associate_detections_to_trackers(detections, trackers, iou_threshold=0.3):
     else:
         matches = np.concatenate(matches, axis=0)
 
-    return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
+    return matches, np.array(unmatched_detections), np.array(
+        unmatched_trackers)
 
 
 class Sort(object):
@@ -231,14 +228,15 @@ class Sort(object):
 
     def update(self, dets):
         """
-    Params:
-      dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
-    Requires: this method must be called once for each frame even with empty detections.
-    Returns the a similar array, where the last column is the object ID.
+        Params:
+        dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
+        Requires: this method must be called once for each frame even with empty detections.
+        Returns the a similar array, where the last column is the object ID.
 
-    NOTE: The number of objects returned may differ from the number of detections provided.
-    """
+        NOTE: The number of objects returned may differ from the number of detections provided.
+        """
         self.frame_count += 1
+
         # get predicted locations from existing trackers.
         trks = np.zeros((len(self.trackers), 5))
         to_del = []
@@ -252,8 +250,7 @@ class Sort(object):
         for t in reversed(to_del):
             self.trackers.pop(t)
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(
-            dets, trks
-        )
+            dets, trks)
 
         # update matched trackers with assigned detections
         for t, trk in enumerate(self.trackers):
@@ -271,12 +268,11 @@ class Sort(object):
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
-            if (trk.time_since_update < 1) and (
-                trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits
-            ):
-                ret.append(
-                    np.concatenate((d, [trk.id])).reshape(1, -1)
-                )  # +1 as MOT benchmark requires positive
+            if (trk.time_since_update <
+                    1) and (trk.hit_streak >= self.min_hits
+                            or self.frame_count <= self.min_hits):
+                ret.append(np.concatenate((d, [trk.id])).reshape(
+                    1, -1))  # +1 as MOT benchmark requires positive
                 rettracks.append(trk)
             i -= 1
             # remove dead tracklet
