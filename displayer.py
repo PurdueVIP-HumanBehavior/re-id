@@ -5,7 +5,7 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 
-# TODO: (nhendy) this script needs massive clean up
+# TODO: the openning of files should prob not be done in create_vid for modularity/preprocessing reasons
 
 FRAME_INDEX = 0
 ID_INDEX = 1
