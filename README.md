@@ -1,4 +1,5 @@
 ## run_reid_pipeline.py setup
+
 final.py is the script used to generate the output video from last semester.
 To reproduce it, you need to do 5 things:
 1. use the reid-repo.yml file in the repo to create a conda environment capable of running the code. [here for reference](https://gist.github.com/pratos/e167d4b002f5d888d0726a5b5ddcca57)
