@@ -13,16 +13,21 @@ X1_INDEX = 2
 Y1_INDEX = 3
 X2_INDEX = 4
 Y2_INDEX = 5
-delimiter = ','
+
+OUT_VIDEO_CODEC = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+OUT_VIDEO_EXTENSION = ".mp4"
 
 def main():
     args = init_args()
-    create_vid(args.dest_vid, args.source_vid, args.ids_txt, view=args.view)
+    create_vid(args.dest_vid, args.source_vid, args.ids_txt, view=args.view, delimiter=args.delimiter)
 
 
 def init_args():
     parser = argparse.ArgumentParser(description="paints videos with bounding boxes and IDs")
-    parser.add_argument("-v", "--view", default=False, action='store_true')
+    parser.add_argument("-v", "--view", default=False, action='store_true',
+                        help="flag used to view the output video as it is being created (is slow)")
+    parser.add_argument("-d", "--delimiter", type=str, default=' ',
+                        help="the delimiter to use for the bounding box text file")
     parser.add_argument("source_vid", metavar='src', type=str,
                         help="the source video to use")
     parser.add_argument("ids_txt", metavar='ids', type=str,
@@ -32,7 +37,7 @@ def init_args():
     return parser.parse_args()
 
 
-def create_vid(output_video_path, input_video_path, output_text_path, view=False):
+def create_vid(output_video_path, input_video_path, output_text_path, view=False, delimiter=' '):
     """
     creates a video using the out video
     :param output_video_path: the name to save the video as
@@ -40,6 +45,7 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
     :param output_text_path: the output text file
     :return: 1 for successful; 0 for failure
     """
+
     if not os.path.exists(input_video_path):
         raise ValueError("vid " + input_video_path + " does not exist")
 
@@ -57,19 +63,19 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
     frame_indexes = np.sort(np.unique(frmame_id_data[:, FRAME_INDEX]))
     interval = np.average(frame_indexes[1:] - frame_indexes[:-1]).astype(np.int64)
 
-    output_video_path = "".join(output_video_path.split('.')[:-1]) + ".avi"
+    output_video_path = "".join(output_video_path.split('.')[:-1]) + OUT_VIDEO_EXTENSION
     while os.path.exists(output_video_path):
         decision = input("the video file " + output_video_path + " already exists. Want to overwrite it? [y/n] ").lower()
         if decision == 'n':
             output_video_path = input("new file name: ")
-            output_video_path = "".join(output_video_path.split('.')[:-1]) + ".avi"
+            output_video_path = "".join(output_video_path.split('.')[:-1]) + OUT_VIDEO_EXTENSION
         else:
             break
 
     video_fps = int(input_video.get(cv2.CAP_PROP_FPS) / interval)
     video_size = (int(input_video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(input_video.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    output_video = cv2.VideoWriter(output_video_path + '.avi',
-                             cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+    output_video = cv2.VideoWriter(output_video_path,
+                             OUT_VIDEO_CODEC,
                              video_fps, video_size)
 
     for frame in tqdm(frame_indexes):
