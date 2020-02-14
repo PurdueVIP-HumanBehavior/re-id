@@ -1,11 +1,11 @@
-from MGN import MGN
+from third_party.mgn import MGN
 import torch
 from torchvision import transforms
 import numpy as np
 import cv2
 from PIL import Image
 import os
-from constants import *
+from constants import INPUT_RESOLUTION, PER_CHANNEL_MEAN, PER_CHANNEL_STD
 
 
 def ndarraytopil(img):
@@ -51,3 +51,6 @@ class MgnWrapper:
         fnorm = torch.norm(ff, p=2, dim=1, keepdim=True)
         ff = ff.div(fnorm.expand_as(ff))
         return ff
+
+    def __call__(self, x):
+        return self.compute_feat_vector(x)
