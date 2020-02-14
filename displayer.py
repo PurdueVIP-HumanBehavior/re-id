@@ -31,11 +31,8 @@ def init_args():
                         help="the name of the destination video")
     return parser.parse_args()
 
-<<<<<<< HEAD
-def create_vid(savename, vid, outtxt, view=False):
-=======
+
 def create_vid(output_video_path, input_video_path, output_text_path, view=False):
->>>>>>> nour comments
     """
     creates a video using the out video
     :param output_video_path: the name to save the video as
