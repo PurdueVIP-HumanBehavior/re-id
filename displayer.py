@@ -7,20 +7,18 @@ from tqdm import tqdm
 
 # TODO: (nhendy) this script needs massive clean up
 
-frameind = 0
-idind = 1
-x1ind = 2
-y1ind = 3
-x2ind = 4
-y2ind = 5
+FRAME_INDEX = 0
+ID_INDEX = 1
+X1_INDEX = 2
+Y1_INDEX = 3
+X2_INDEX = 4
+Y2_INDEX = 5
 delimiter = ','
 
 def main():
     args = init_args()
     create_vid(args.dest_vid, args.source_vid, args.ids_txt, view=args.view)
 
-<<<<<<< HEAD
-=======
 
 def init_args():
     parser = argparse.ArgumentParser(description="paints videos with bounding boxes and IDs")
@@ -33,63 +31,66 @@ def init_args():
                         help="the name of the destination video")
     return parser.parse_args()
 
->>>>>>> works for me now at least
+<<<<<<< HEAD
 def create_vid(savename, vid, outtxt, view=False):
+=======
+def create_vid(output_video_path, input_video_path, output_text_path, view=False):
+>>>>>>> nour comments
     """
     creates a video using the out video
-    :param savename: the name to save the video as
-    :param vid: the video file path
-    :param outtxt: the output text file
+    :param output_video_path: the name to save the video as
+    :param input_video_path: the video file path
+    :param output_text_path: the output text file
     :return: 1 for successful; 0 for failure
     """
-    if not os.path.exists(vid):
-        raise ValueError("vid " + vid + " does not exist")
+    if not os.path.exists(input_video_path):
+        raise ValueError("vid " + input_video_path + " does not exist")
 
-    invid = cv2.VideoCapture(vid)
-    if invid.isOpened() == False:
-        raise RuntimeError("error opening file " + vid)
+    input_video = cv2.VideoCapture(input_video_path)
+    if input_video.isOpened() == False:
+        raise RuntimeError("error opening file " + input_video_path)
 
-    if not os.path.exists(outtxt):
-        raise ValueError("outtxt " + outtxt + "does not exist")
+    if not os.path.exists(output_text_path):
+        raise ValueError("outtxt " + output_text_path + "does not exist")
 
-    output = np.loadtxt(outtxt, delimiter=delimiter)
-    if output.shape[1] != 6:
-        raise ValueError("The text file should have 6 entries per row. yours has {}".format(output.shape[1]))
+    frmame_id_data = np.loadtxt(output_text_path, delimiter=delimiter)
+    if frmame_id_data.shape[1] != 6:
+        raise ValueError("The text file should have 6 entries per row. yours has {}".format(frmame_id_data.shape[1]))
 
-    uniqframenums = np.sort(np.unique(output[:, frameind]))
-    interval = np.average(uniqframenums[1:] - uniqframenums[:-1]).astype(np.int64)
+    frame_indexes = np.sort(np.unique(frmame_id_data[:, FRAME_INDEX]))
+    interval = np.average(frame_indexes[1:] - frame_indexes[:-1]).astype(np.int64)
 
-    savename = "".join(savename.split('.')[:-1]) + ".avi"
-    while os.path.exists(savename):
-        decision = input("the video file " + savename + " already exists. Want to overwrite it? [y/n] ").lower()
+    output_video_path = "".join(output_video_path.split('.')[:-1]) + ".avi"
+    while os.path.exists(output_video_path):
+        decision = input("the video file " + output_video_path + " already exists. Want to overwrite it? [y/n] ").lower()
         if decision == 'n':
-            savename = input("new file name: ")
-            savename = "".join(savename.split('.')[:-1]) + ".avi"
+            output_video_path = input("new file name: ")
+            output_video_path = "".join(output_video_path.split('.')[:-1]) + ".avi"
         else:
             break
 
-    vidfps = int(invid.get(cv2.CAP_PROP_FPS) / interval)
-    vidsize = (int(invid.get(cv2.CAP_PROP_FRAME_WIDTH)), int(invid.get(cv2.CAP_PROP_FRAME_HEIGHT)))
-    outvid = cv2.VideoWriter(savename + '.avi',
-                    cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
-                    vidfps, vidsize)
+    video_fps = int(input_video.get(cv2.CAP_PROP_FPS) / interval)
+    video_size = (int(input_video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(input_video.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    output_video = cv2.VideoWriter(output_video_path + '.avi',
+                             cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                             video_fps, video_size)
 
-    for frame in tqdm(uniqframenums):
-        framerows = output[output[:, frameind]==frame, :]
-        invid.set(cv2.CAP_PROP_POS_FRAMES, frame)
-        ret, img = invid.read()
+    for frame in tqdm(frame_indexes):
+        frame_rows = frmame_id_data[frmame_id_data[:, FRAME_INDEX] == frame, :]
+        input_video.set(cv2.CAP_PROP_POS_FRAMES, frame)
+        ret, img = input_video.read()
         if ret:
-            bboxes = framerows[:, x1ind:(y2ind+1)].astype(np.int64)
-            ids = framerows[:, idind].astype(np.int64)
+            bboxes = frame_rows[:, X1_INDEX:(Y2_INDEX + 1)].astype(np.int64)
+            ids = frame_rows[:, ID_INDEX].astype(np.int64)
             nimg = paint_frame(img, bboxes, ids)
             if view:
                 cv2.imshow("savename", nimg)
-                cv2.waitKey(int(1000 / vidfps))
-            outvid.write(nimg)
+                cv2.waitKey(int(1000 / video_fps))
+            output_video.write(nimg)
         else:
             break
 
-    outvid.release()
+    output_video.release()
 
 def paint_frame(img, bboxes, ids):
     """
