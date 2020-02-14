@@ -17,6 +17,10 @@ your prompt should look something like this now probably
  - I have the weights for MGN stored locally there as well here: ```/local/b/mrasheed/model_weights/MGN.pt```
  - also, when you run it for the first time, the FasterRCNN libraries will download its weights onto your shay account. It's not that big but might put you over the edge if you're already near the 5GB limit on shay
 
-## How do I move files between?
+## How do I move files between computers?
  - use scp command
  - if not familiar with it, can get an app such as WinSCP for windows or idk for mac lol. figure it out? let me know what you find.
+
+## Other notes
+ - look up how to use tmux command/tool. useful for remotely using machines
+ - if on a windows computer, activate the windows linux subsystem; huge time saver. [Click Here](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
