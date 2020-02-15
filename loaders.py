@@ -28,7 +28,7 @@ class Loader:
     def get_vid_names(self):
         return self.videos.keys()
 
-      
+
 class VideoLoader(Loader):
     def __init__(self, path, vids, interval=1):
         super().__init__()
@@ -62,4 +62,3 @@ class VideoLoader(Loader):
 
     def __len__(self):
         return int(self.length / self.interval)
-
