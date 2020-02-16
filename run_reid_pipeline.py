@@ -164,6 +164,7 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
                                             (findex, trk[4], box[0][0],
                                              box[0][1], box[1][0], box[1][1]))
 
+                output_file[vidname].close()
             # Iterate through new tracks and add their current bounding box to list of track references
             for trk in new_kb_trackers:
                 d = trk.get_state()[0]
