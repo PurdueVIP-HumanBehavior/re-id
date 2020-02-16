@@ -155,8 +155,9 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
                 if ind in indexes:
                     cropimg = crop_image(frame, box)
                     if cropimg.size > 5:
-                        _, temp_file_name = tempfile.mkstemp(suffix='.jpg')
+                        fd, temp_file_name = tempfile.mkstemp(suffix='.jpg')
                         cv2.imwrite(temp_file_name, cropimg)
+                        fd.close()
                         matched_kb_trackers[ind].save_img(temp_file_name)
 
                 # Write bounding box, frame number, and trackid to file
@@ -164,15 +165,15 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
                                             (findex, trk[4], box[0][0],
                                              box[0][1], box[1][0], box[1][1]))
 
-            output_files[vidname].close()
             # Iterate through new tracks and add their current bounding box to list of track references
             for trk in new_kb_trackers:
                 d = trk.get_state()[0]
                 box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
                 cropimg = crop_image(frame, box)
                 if cropimg.size > 5:
-                    _, temp_file_name = tempfile.mkstemp(suffix='.jpg')
+                    fd, temp_file_name = tempfile.mkstemp(suffix='.jpg')
                     cv2.imwrite(temp_file_name, cropimg)
+                    fd.close()
                     trk.save_img(temp_file_name)
 
 
