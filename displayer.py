@@ -63,12 +63,12 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
     frame_indexes = np.sort(np.unique(frmame_id_data[:, FRAME_INDEX]))
     interval = np.average(frame_indexes[1:] - frame_indexes[:-1]).astype(np.int64)
 
-    output_video_path = "".join(output_video_path.split('.')[:-1]) + OUT_VIDEO_EXTENSION
+    output_video_path = append_extension(output_video_path)
     while os.path.exists(output_video_path):
         decision = input("the video file " + output_video_path + " already exists. Want to overwrite it? [y/n] ").lower()
         if decision == 'n':
             output_video_path = input("new file name: ")
-            output_video_path = "".join(output_video_path.split('.')[:-1]) + OUT_VIDEO_EXTENSION
+            output_video_path = append_extension(output_video_path)
         else:
             break
 
@@ -117,6 +117,9 @@ def paint_frame(img, bboxes, ids):
                     color=(0, 255, 0),
                     thickness=3)
     return img
+
+def append_extension(filename):
+    return filename + OUT_VIDEO_EXTENSION
 
 if __name__ == "__main__":
     sys.exit(main())
