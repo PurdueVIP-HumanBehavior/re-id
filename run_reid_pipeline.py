@@ -157,7 +157,7 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
                     if cropimg.size > 5:
                         fd, temp_file_name = tempfile.mkstemp(suffix='.jpg')
                         cv2.imwrite(temp_file_name, cropimg)
-                        fd.close()
+                        os.close(fd)
                         matched_kb_trackers[ind].save_img(temp_file_name)
 
                 # Write bounding box, frame number, and trackid to file
@@ -173,7 +173,7 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
                 if cropimg.size > 5:
                     fd, temp_file_name = tempfile.mkstemp(suffix='.jpg')
                     cv2.imwrite(temp_file_name, cropimg)
-                    fd.close()
+                    os.close(fd)
                     trk.save_img(temp_file_name)
 
 
