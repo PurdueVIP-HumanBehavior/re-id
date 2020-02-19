@@ -1,5 +1,4 @@
 # TODO:(nhendy) script level docstring
-import tempfile
 import galleries
 from detectors import FasterRCNN
 from attribute_extractors import MgnWrapper
@@ -72,46 +71,6 @@ def init_args():
     )
     return parser.parse_args()
 
-
-def read_img_and_compute_feat_vector(path, attribute_extractor):
-    if os.path.isfile(path):
-        img = Image.open(path)
-        return attribute_extractor(img)
-    return None
-
-
-def get_max_index(array, k=1):
-    maxnums = array[0:k]
-    maxinds = np.arange(0, k)
-    minins = min(maxnums)
-    mininin = maxnums.index(minins)
-    for i, val in enumerate(array):
-        if val > minins:
-            maxnums[mininin] = val
-            maxinds[mininin] = i
-            minins = min(maxnums)
-            mininin = maxnums.index(minins)
-    if len(maxnums) == 1:
-        return maxinds[0]
-    else:
-        return [x for _, x in sorted(zip(maxnums, maxinds), reverse=True)]
-
-
-def load_gallery_feat_vectors(imgs_dir, attribute_extractor):
-    if not os.path.exists(imgs_dir):
-        raise ValueError("path doesn't exist")
-    feat_vectors = list()
-    for name in os.listdir(imgs_dir):
-        feat_vector = read_img_and_compute_feat_vector(
-            os.path.join(imgs_dir, name), attribute_extractor)
-        feat_vectors.append(feat_vector)
-    return feat_vectors
-
-
-def cosine_similarity(x, y):
-    return np.dot(x, y) / (np.sqrt(np.dot(x, x)) * np.sqrt(np.dot(y, y)))
-
-
 def write_gallery_imgs(imgs, path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -120,7 +79,7 @@ def write_gallery_imgs(imgs, path):
 
 def calculate_dists(uniqvect, gallery):
     dists = [
-        np.average(np.dot(uniqvect, np.transpose(feat_vector)))
+        1 - np.average(np.dot(uniqvect, np.transpose(feat_vector)))
         for feat_vector in gallery._feats
     ]
     return dists
@@ -142,8 +101,6 @@ def single_assignment(kb_tracks, gallery):
     if len(rowind) < len(kb_tracks):
         return [i for i in range(len(kb_tracks))
                 if i not in rowind]
-
-
 
 def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers, attribute_extractor,
                              output_files):
