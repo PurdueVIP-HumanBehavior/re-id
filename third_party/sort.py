@@ -134,6 +134,7 @@ class KalmanBoxTracker(object):
 
         self.reid = list()
         self.imgfiles = list()
+        self.prev_dists = list()
 
     def update(self, bbox):
         """
