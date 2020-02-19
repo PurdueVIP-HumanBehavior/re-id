@@ -92,7 +92,6 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
             output_video.write(nimg)
         else:
             break
-
     output_video.release()
 
 def paint_frame(img, bboxes, ids):
