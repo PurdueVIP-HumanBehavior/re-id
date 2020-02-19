@@ -87,6 +87,7 @@ def calculate_dists(uniqvect, gallery):
 # return value is array of indexes of tracks that did not get ided anything
 def single_assignment(kb_tracks, gallery):
     max_dists_size = len(gallery._feats)
+    # print(max_dists_size)
     if max_dists_size == 0:
         return [i for i in range(len(kb_tracks))]
     assignment_cost_matrix = list()
@@ -98,9 +99,12 @@ def single_assignment(kb_tracks, gallery):
     for i, ri in enumerate(rowind):
         kb_tracks[ri].reid.append(colind[i])
 
+    # print(len(kb_tracks), len(rowind))
     if len(rowind) < len(kb_tracks):
+        # print([i for i in range(len(kb_tracks)) if i not in rowind], rowind)
         return [i for i in range(len(kb_tracks))
                 if i not in rowind]
+    return list()
 
 def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers, attribute_extractor,
                              output_files):
@@ -152,9 +156,10 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers, att
                 box = ((int(trk[0]), int(trk[1])), (int(trk[2]), int(trk[3])))
 
                 # Write bounding box, frame number, and trackid to file
-                if ind in not_assigned:
+                if (ind in not_assigned) or len(matched_kb_trackers[ind].reid) == 0:
                     reidmode = -1
                 else:
+                    # print(ind, not_assigned)
                     reidmode = mode(matched_kb_trackers[ind].reid)[0][0]
                 output_files[vidname].write("%d,%d,%.2f,%.2f,%.2f,%.2f\n" %
                                             (findex, reidmode, box[0][0],
@@ -165,10 +170,11 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers, att
                 d = trk.get_state()[0]
                 box = ((int(d[0]), int(d[1])), (int(d[2]), int(d[3])))
                 cropimg = crop_image(frame, box)
-                if cropimg.size > 5: continue
+                # if cropimg.size > 5: continue
                 trk.prev_feat = attribute_extractor(cropimg)
                 trk.prev_dists = calculate_dists(trk.prev_feat, gallery)
-            single_assignment(new_kb_trackers, gallery)
+            if len(new_kb_trackers) != 0:
+                single_assignment(new_kb_trackers, gallery)
 
 
 def convert_files_to_numpy(temp_dir, output_files):
