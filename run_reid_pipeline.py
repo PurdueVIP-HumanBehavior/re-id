@@ -100,7 +100,7 @@ def load_gallery_feat_vectors(imgs_dir, attribute_extractor):
     if not os.path.exists(imgs_dir):
         raise ValueError("path doesn't exist")
     feat_vectors = list()
-    for name in os.listdir(imgs_dir):
+    for name in sorted(os.listdir(imgs_dir)):
         feat_vector = read_img_and_compute_feat_vector(
             os.path.join(imgs_dir, name), attribute_extractor)
         feat_vectors.append(feat_vector)
