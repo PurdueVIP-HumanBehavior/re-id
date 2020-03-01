@@ -77,7 +77,7 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
     output_video = cv2.VideoWriter(output_video_path,
                              OUT_VIDEO_CODEC,
                              video_fps, video_size)
-
+    coord_list = []
     for frame in tqdm(frame_indexes):
         frame_rows = frmame_id_data[frmame_id_data[:, FRAME_INDEX] == frame, :]
         input_video.set(cv2.CAP_PROP_POS_FRAMES, frame)
@@ -85,14 +85,15 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
         if ret:
             bboxes = frame_rows[:, X1_INDEX:(Y2_INDEX + 1)].astype(np.int64)
             ids = frame_rows[:, ID_INDEX].astype(np.int64)
-            nimg = paint_frame(img, bboxes, ids)
+            nimg, mapping_coord = paint_frame(img, bboxes, ids)
+            coord_list.append(mapping_coord)
             if view:
                 cv2.imshow("savename", nimg)
                 cv2.waitKey(int(1000 / video_fps))
             output_video.write(nimg)
         else:
             break
-
+    
     output_video.release()
 
 def paint_frame(img, bboxes, ids):
@@ -103,7 +104,11 @@ def paint_frame(img, bboxes, ids):
     :param ids: a list of ids for the corresponding bouding boxes
     :return: returns numpy array of image with bounding boxes painted on
     """
+
+    mapping_coord = []
     for id, box in zip(ids, bboxes):
+        center = (int(((box[2]-box[0])/2+box[0])),int(box[3]),id)
+        mapping_coord.append(center)
         cv2.rectangle(img,
                       (box[0], box[1]),
                       (box[2], box[3]),
@@ -116,7 +121,7 @@ def paint_frame(img, bboxes, ids):
                     3,
                     color=(0, 255, 0),
                     thickness=3)
-    return img
+    return img, mapping_coord
 
 if __name__ == "__main__":
     sys.exit(main())
