@@ -110,7 +110,7 @@ def transform_2d():
 
 	#Open camera and floor plan
 	cam_img = cv2.imread('00000.jpg',cv2.IMREAD_COLOR)
-	fl_plan_img = cv2.imread('msee_atrium.png',cv2.IMREAD_COLOR)
+	fl_plan_img = cv2.imread('floor_plan.png',cv2.IMREAD_COLOR)
 
 	#Calculate H matrix
 	H,stat = cv2.findHomography(camera_pts,fl_plan_pts)
