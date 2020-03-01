@@ -105,8 +105,8 @@ def coord_extraction (img):
 
 def transform_2d():
 	#TODO: find out how to get the points
-	camera_pts = coord_extraction('test_MSEE_atrium.jpg')
-	fl_plan_pts = coord_extraction('msee_atrium.PNG')
+	camera_pts = coord_extraction('camera_reference.jpg')
+	fl_plan_pts = coord_extraction('2d_reference.png')
 
 	#Open camera and floor plan
 	cam_img = cv2.imread('00000.jpg',cv2.IMREAD_COLOR)
