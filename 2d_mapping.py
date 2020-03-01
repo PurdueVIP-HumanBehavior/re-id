@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import displayer
 
 def transform_2d():
 	#TODO: find out how to get the points
@@ -19,19 +20,24 @@ def transform_2d():
 
 	#get the mapping array
 	req_map = cv2.perspectiveTransform(pt,H)
-	circle_rad = 55
-	circ_col = (0,255,0)
+	circle_rad = 5
+	circ_col = (255,0,0)
 	thickness = -1
 
 	mapp = req_map[0]
+	print(displayer.req_point_list)
 
 	#Draw the points on camera and floor plan
 	for cord in mapp:
-		print(type(cord[0]))
-	#	fl_plan_img = cv2.circle(fl_plan_img,cord,circle_rad)
-	#cv2.imshow("fl_plan",fl_plan_img)
-	#cv2.waitKey(0)
-	#cv2.destroyAllWindows()
+		center = (int(cord[0]),int(cord[1]))
+		fl_plan_img = cv2.circle(fl_plan_img,center,circle_rad,circ_col,thickness)
+
+	for pt in camera_pts:
+		center = (int(pt[0]),int(pt[1]))
+		cam_img = cv2.circle(cam_img,center,circle_rad,circ_col,thickness)
+	cv2.imshow("fl_plan_img",fl_plan_img)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
 
 def main():
 	transform_2d()
