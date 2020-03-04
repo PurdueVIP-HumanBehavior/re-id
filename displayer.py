@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import argparse
 from tqdm import tqdm
+from mapping_2d import *
 
 # TODO: the openning of files should prob not be done in create_vid for modularity/preprocessing reasons
 
@@ -95,6 +96,8 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
             break
     
     output_video.release()
+    #print(coord_list)
+    transform_2d(coord_list)
 
 def paint_frame(img, bboxes, ids):
     """
