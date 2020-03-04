@@ -33,9 +33,9 @@ def init_args():
                         choices=['dot_product'])
     parser.add_argument("-l",
                         "--loader",
-                        default='video',
+                        default='videos',
                         help="Type of data loading",
-                        choices=['video'])
+                        choices=['videos', 'frames'])
     parser.add_argument("-g",
                         "--gallery",
                         default='trigger',
