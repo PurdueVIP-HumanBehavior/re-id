@@ -1,10 +1,13 @@
 import numpy as np
 import cv2
 import operator
-import displayer
 
 def coord_extraction (img):
-    
+    '''
+    This function takes in an image with blue reference points. It filters out all pixels with the color blue 
+    and then group those points by x-coordinates. It returns the average x,y value of each group as a set of 
+    reference points
+    '''
     # Load the image
     image = cv2.imread(img)
     width = image.shape[1]
@@ -29,9 +32,6 @@ def coord_extraction (img):
         res = cv2.bitwise_and(resized,resized, mask= mask)
     else:
         res = cv2.bitwise_and(image,image, mask= mask)
-    #cv2.imshow('res',res)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
 
     x_coordinate = np.array([])
     y_coordinate = np.array([])
