@@ -1,6 +1,7 @@
 from constants import defaultkey
 from utils import unitdotprod
 from utils import crop_image
+import numpy as np
 
 
 class TriggerGallery:
@@ -39,7 +40,7 @@ class TriggerLineGallery:
             if trig.video_oi != video_name: continue
             indsToSave = trig.update(bboxes)
             for index in indsToSave:
-                cropimg = crop_image(frame, bboxes[index, 1:])
+                cropimg = crop_image(frame, np.reshape(bboxes[index, :-1], (2,2)))
                 vect = self._attribute_extractor(cropimg)
                 self._people.append(cropimg)
                 self._feats.append(vect)

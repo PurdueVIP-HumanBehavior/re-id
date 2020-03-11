@@ -68,10 +68,10 @@ class VectorTrigger:
         inout = np.sign(displace_vects.dot(self.ovector))
 
         for i, (val, bboxes) in enumerate(zip(inout, peoplebboxes)):
-            if displace_vects[i] > self.length_thresh: continue
+            if disp_mags[i] > self.length_thresh: continue
             id = bboxes[4]
 
-            if self.flags[id] >= 1: self.flags += 1
+            if self.flags[id] >= 1: self.flags[id] += 1
             if self.flags[id] >= self.frame_offset:
                 retval.append(i)
                 self.flags[id] = 0
