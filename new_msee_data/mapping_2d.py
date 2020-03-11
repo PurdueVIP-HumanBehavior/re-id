@@ -128,7 +128,7 @@ def transform_2d(frame_data):
 
 			#get the mapping array
 			req_map = cv2.perspectiveTransform(pt,H)
-			circle_rad = 5
+			circle_rad = 20
 			circ_col = (255,0,0)
 			thickness = -1
 
@@ -138,7 +138,7 @@ def transform_2d(frame_data):
 			for cord in mapp:
 				center = (int(cord[0]),int(cord[1]))
 				fl_plan_img = cv2.circle(fl_plan_img,center,circle_rad,circ_col,thickness)
-				fl_plan_img = cv2.putText(fl_plan_img,str(data[2]),(int(cord[0]),int(cord[1])),cv2.FONT_HERSHEY_SIMPLEX,1,color=(0, 255, 0),thickness=1)
+				fl_plan_img = cv2.putText(fl_plan_img,str(data[2]),(int(cord[0]),int(cord[1])),cv2.FONT_HERSHEY_SIMPLEX,5,color=(0, 255, 0),thickness=2)
 		#TODO: save img in gallery and reset img
 		#img_name = "frame"+str(c)+".jpg"
 		#cv2.imwrite("data/"+img_name,fl_plan_img)
