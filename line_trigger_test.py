@@ -244,6 +244,14 @@ def main():
             500,
             5
         ),
+        VectorTrigger(
+            # TODO: (nhendy) weird hardcoded name
+            "NE_Moiz",
+            np.array([1433, 384, 1900, 384]),
+            np.array([917, 537]),
+            500,
+            5
+        )
     ]
 
     gallery = galleries.TriggerLineGallery(attribute_extractor, trigger_causes)
