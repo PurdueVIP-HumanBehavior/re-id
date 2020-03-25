@@ -242,7 +242,7 @@ def main():
             np.array([227, 470, 227+244, 470]),
             np.array([917, 537]),
             500,
-            20
+            5
         ),
     ]
 
@@ -267,6 +267,7 @@ def main():
     # Save images from gallery captured throughout video
     write_gallery_imgs(gallery.people(), args.gallery_path)
 
+    """
     # Load up the gallery feature vectors
     gallery_feature_vectors = load_gallery_feat_vectors(
         args.gallery_path, attribute_extractor)
@@ -278,7 +279,7 @@ def main():
     # Run reid model and map track ids to reid ids
     run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
                                   output_files, gallery_feature_vectors)
-
+    """
 
 if __name__ == "__main__":
     sys.exit(main())
