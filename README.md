@@ -11,7 +11,7 @@ To reproduce it, you need to do 5 things:
    - change line 18 to path of that image, wherever you've saved it
 5. download the MGN weights from the drive
    - Human Behavior Spring 2020/Weights/MGN.pt
-   - **rename it to model.pt and save in same directory as final.py** 
+   - **rename it to model.pt and save in same directory as final.py**
 
 ## run run_reid_pipeline.py
 Script usage is the following
