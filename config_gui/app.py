@@ -2,6 +2,7 @@ import os
 import sys
 import re
 from enum import Enum
+import json
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QGraphicsScene, QSlider, QGraphicsLineItem
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QPainterPath
 from PyQt5.QtCore import Qt, QRectF, QLineF
@@ -15,6 +16,9 @@ class CamItem:
         self.frame = 0
 
     def getFrame(self, frame): raise NotImplementedError("Override me")
+
+    def get_name(self):
+        return os.path.basename(os.path.normpath(self.path))
 
     def update_view(self, slider, scene_list):
         pass
@@ -55,6 +59,12 @@ class VideoCamItem(CamItem):
 
     def get_lines(self):
         return self.count_lines
+
+    def get_lines_jsonfriendly(self):
+        retval = dict()
+        for i, line in enumerate(self.count_lines):
+            retval[i] = {"line": line, "point": self.count_lines[line]}
+        return retval
 
     def __len__(self):
         return self.video_len
@@ -179,6 +189,10 @@ class Consumer(QMainWindow, Ui_MainWindow):
         self.pushButton_next_cam.setDisabled(True)
         self.pushButton_next_cam.clicked.connect(self.next_button_click)
 
+        # save button setup
+        self.pushButton_save.setDisabled(True)
+        self.pushButton_save.clicked.connect(self.save_butt)
+
         # radio button setups
         self.radioButton_lines.toggle()
         self.graphicsView_sub_left.setVisible(False)
@@ -243,6 +257,7 @@ class Consumer(QMainWindow, Ui_MainWindow):
         self.horizontalSlider.setDisabled(False)
         self.radioButton_lines.setDisabled(False)
         self.radioButton_map.setDisabled(False)
+        self.pushButton_save.setDisabled(False)
         self.change_vid_index(0)
         self.update_view()
 
@@ -287,6 +302,16 @@ class Consumer(QMainWindow, Ui_MainWindow):
         self.horizontalSlider.setValue(vid.getCurrentFrameIndex())
         self.graphicsScene_main.load_image(vid.getCurrentFrame())
         self.graphicsScene_main.draw_lines(vid.get_lines())
+
+    def save_butt(self):
+        self.vid_list[self.vid_index].set_lines(self.graphicsScene_main.get_lines())
+        self.generate_file("config.json")
+
+    def generate_file(self, filename):
+        info_dict = {vid.get_name(): vid.get_lines_jsonfriendly() for vid in self.vid_list}
+        with open(filename, "w") as f:
+            f.write(json.dumps(info_dict))
+            
             
 
 if __name__ == "__main__":
