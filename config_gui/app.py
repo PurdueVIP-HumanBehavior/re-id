@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+from enum import Enum
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QGraphicsScene, QSlider, QGraphicsLineItem
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QPainterPath
 from PyQt5.QtCore import Qt, QRectF, QLineF
@@ -26,7 +27,7 @@ class VideoCamItem(CamItem):
         self.frame_interval = int(self.video_len/100)
         self.frame_cache = dict()
         self.frame = 0
-        self.count_lines = set()
+        self.count_lines = dict()
 
     def getFrame(self, frame):
         nframe = frame * self.frame_interval
@@ -58,19 +59,6 @@ class VideoCamItem(CamItem):
     def __len__(self):
         return self.video_len
 
-class MyGraphicsLineItem(QGraphicsLineItem):
-    def __init__(self, x1, y1, x2, y2, pen, parentscene):
-        super().__init__(x1, y1, x2, y2)
-        self.pen = pen
-        self.parentscene = parentscene
-
-    def mousePressEvent(self, event):
-        self.parentscene.removeItem(self)
-
-    def paint(self, painter, option, widget):
-        painter.setPen(self.pen)
-        painter.drawLine(self.line())
-
 class MyGraphicsScene(QGraphicsScene):
     def __init__(self, view):
         super().__init__()
@@ -98,6 +86,11 @@ class MyGraphicsScene(QGraphicsScene):
         # print(event.scenePos().x(), event.scenePos().y())
         pass
 
+class LSGSStates(Enum):
+    IDLE = 0
+    LINE_DRAWN = 1
+    POINT_DRAWN = 2
+
 class LineSelectGraphicsScene(MyGraphicsScene):
     def __init__(self, view):
         super().__init__(view)
@@ -105,47 +98,70 @@ class LineSelectGraphicsScene(MyGraphicsScene):
         self.current_pts = None
         self.pen = QPen(Qt.green, 10)
         self.line_list = list()
+        self.line_point = dict()
         self.stage_removal = None
+        self.state = LSGSStates.IDLE
 
     def mousePressEvent(self, event):
-        # print(self.itemAt(event.scenePos().x(), event.scenePos().y()))
-        path = QPainterPath()
-        path.addRect(event.scenePos().x() - 5, event.scenePos().y() - 5, 10, 10)
-        selitems = self.items(path)
-        if isinstance(selitems[0], QGraphicsLineItem):
-            self.stage_removal = selitems[0]
-
-    def mouseMoveEvent(self, event):
-        self.stage_removal = None
         x = event.scenePos().x()
         y = event.scenePos().y()
-        if not self.current_line:
-            self.current_line = self.addLine(x, y, x, y, self.pen)
-            self.current_pts = (x, y)
+        if self.state == LSGSStates.LINE_DRAWN:
+            point_item = self.addEllipse(x-5, y-5, 10, 10, self.pen)
+            self.line_point[self.current_line] = ((x,y), point_item)
+            self.current_line = None
+            self.state = LSGSStates.POINT_DRAWN
+        # print(self.itemAt(event.scenePos().x(), event.scenePos().y()))
         else:
-            self.current_line.setLine(QLineF(self.current_pts[0], self.current_pts[1], x, y))
+            path = QPainterPath()
+            path.addRect(x-5, y-5, 10, 10)
+            selitems = self.items(path)
+            if isinstance(selitems[0], QGraphicsLineItem):
+                self.stage_removal = selitems[0]
 
-        self.update()
+    def mouseMoveEvent(self, event):
+        if self.state == LSGSStates.IDLE:
+            self.stage_removal = None
+            x = event.scenePos().x()
+            y = event.scenePos().y()
+            if not self.current_line:
+                self.current_line = self.addLine(x, y, x, y, self.pen)
+                self.current_pts = (x, y)
+            else:
+                self.current_line.setLine(QLineF(self.current_pts[0], self.current_pts[1], x, y))
+
+            self.update()
 
     def mouseReleaseEvent(self, event):
-        if self.stage_removal:
-            self.removeItem(self.stage_removal)
-        else:
-            self.line_list.append(self.current_line)
-            self.current_line = None
+        if self.state == LSGSStates.IDLE:
+            if self.stage_removal:
+                self.removeItem(self.line_point[self.stage_removal][1])
+                del self.line_point[self.stage_removal]
+                self.removeItem(self.stage_removal)
+                self.line_list.remove(self.stage_removal)
+                self.stage_removal = None
+            else:
+                self.line_list.append(self.current_line)
+                self.state = LSGSStates.LINE_DRAWN
+        elif self.state == LSGSStates.POINT_DRAWN:
+            self.state = LSGSStates.IDLE
         
     def clear_lines(self):
-        for line in self.line_list:
+        for line in self.line_point:
             self.removeItem(line)
+            self.removeItem(self.line_point[line][1])
         self.line_list = list()
+        self.line_point = dict()
 
     def draw_lines(self, lines):
         self.clear_lines()
         for line in lines:
             self.line_list.append(self.addLine(line[0], line[1], line[2], line[3], self.pen))
+            point = lines[line]
+            self.line_point[self.line_list[-1]] = (point, self.addEllipse(point[0]-5, point[1]-5, 10, 10, self.pen))
 
     def get_lines(self):
-        return [[line.line().x1(), line.line().y1(), line.line().x2(), line.line().y2()] for line in self.line_list]
+        # return [[line.line().x1(), line.line().y1(), line.line().x2(), line.line().y2()] for line in self.line_list]
+        return {(line.line().x1(), line.line().y1(), line.line().x2(), line.line().y2()):self.line_point[line][0] for line in self.line_point}
 
 class Consumer(QMainWindow, Ui_MainWindow):
 
