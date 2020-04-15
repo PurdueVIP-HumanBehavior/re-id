@@ -42,13 +42,13 @@ class DecodeBlock(nn.Module):
                  out_channels,
                  in_channels,
                  padding,
-                 ds_kernel_size=2):
+                 ups_kernel_size=2):
         super(DecodeBlock, self).__init__()
         self.cbr = CbrBlock(kernel_size=kernel_size,
                             in_channels=in_channels,
                             out_channels=out_channels,
                             padding=padding)
-        self.upsample = nn.UpsamplingNearest2d()
+        self.upsample = nn.UpsamplingNearest2d(scale_factor=ups_kernel_size)
 
     def __call__(self, x):
         return self.upsample(self.cbr(x))
@@ -63,7 +63,7 @@ class EDNet(nn.Module):
                  depth_growth_rate=2):
         super(EDNet, self).__init__()
         # TODO : (nhendy) sanity check input types and values
-        height, width, channels = input_shape
+        channels, height, width = input_shape
         layers = []
         current_channels = channels
         for i in range(num_downsamples):
@@ -83,7 +83,7 @@ class EDNet(nn.Module):
                             in_channels=current_channels,
                             out_channels=16 * 2**i,
                             padding=1,
-                            ds_kernel_size=2))
+                            ups_kernel_size=2))
             current_channels = 16 * 2**i
 
         self.decoder = nn.Sequential(*layers)

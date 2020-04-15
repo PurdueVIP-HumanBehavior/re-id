@@ -164,11 +164,18 @@ class Market1501Dataset(data.Dataset):
     gt_path = "gt_bbox"
     attributes_file = "market_attribute.mat"
 
-    def __init__(self, root, train=True, include_attributes_labels=True):
+    def __init__(self,
+                 root,
+                 input_transforms,
+                 target_transforms,
+                 train=True,
+                 include_attributes_labels=True):
         super(Market1501Dataset, self).__init__()
         self.root = root
         self.train = train
         self._include_attributes = include_attributes_labels
+        self._input_transform = input_transforms
+        self._target_transform = target_transforms
         self._download()
         self._load_imgs()
         self._make_inputs()
@@ -261,8 +268,12 @@ class Market1501Dataset(data.Dataset):
             set_name = self._requested_set_name()
             attributes = self._set_to_person_id_to_attributes[set_name][target]
             target = np.concatenate(
-                [np.asarray(target).reshape((1, )), attributes]).astype(int)
-
+                [np.asarray(target).reshape((1, )),
+                 attributes]).astype(np.float32)
+        if self._input_transform:
+            img = self._input_transform(img)
+        if self._target_transform:
+            target = self._target_transform(target)
         return img, target
 
     def __len__(self):
