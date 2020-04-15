@@ -1,9 +1,9 @@
 import os
 import sys
 import re
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QGraphicsScene, QSlider
-from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QGraphicsScene, QSlider, QGraphicsLineItem
+from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QPainterPath
+from PyQt5.QtCore import Qt, QRectF, QLineF
 import numpy as np
 import cv2
 from config_gui_layout import *
@@ -26,6 +26,7 @@ class VideoCamItem(CamItem):
         self.frame_interval = int(self.video_len/100)
         self.frame_cache = dict()
         self.frame = 0
+        self.count_lines = set()
 
     def getFrame(self, frame):
         nframe = frame * self.frame_interval
@@ -48,8 +49,27 @@ class VideoCamItem(CamItem):
     def getCurrentFrameIndex(self):
         return self.frame
 
+    def set_lines(self, lines):
+        self.count_lines = lines 
+
+    def get_lines(self):
+        return self.count_lines
+
     def __len__(self):
         return self.video_len
+
+class MyGraphicsLineItem(QGraphicsLineItem):
+    def __init__(self, x1, y1, x2, y2, pen, parentscene):
+        super().__init__(x1, y1, x2, y2)
+        self.pen = pen
+        self.parentscene = parentscene
+
+    def mousePressEvent(self, event):
+        self.parentscene.removeItem(self)
+
+    def paint(self, painter, option, widget):
+        painter.setPen(self.pen)
+        painter.drawLine(self.line())
 
 class MyGraphicsScene(QGraphicsScene):
     def __init__(self, view):
@@ -61,7 +81,7 @@ class MyGraphicsScene(QGraphicsScene):
         if self.pixmapitem:
             self.removeItem(self.pixmapitem)
         self.img = img
-        print(img.shape)
+        # print(img.shape)
         if len(self.img.shape) > 2:
             h, w, _ = self.img.shape
             self.imgq = QImage(self.img.data, w, h, 3 * w, QImage.Format_RGB888)
@@ -75,7 +95,57 @@ class MyGraphicsScene(QGraphicsScene):
         self.update()
 
     def mousePressEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
-        print(event.scenePos().x(), event.scenePos().y())
+        # print(event.scenePos().x(), event.scenePos().y())
+        pass
+
+class LineSelectGraphicsScene(MyGraphicsScene):
+    def __init__(self, view):
+        super().__init__(view)
+        self.current_line = None
+        self.current_pts = None
+        self.pen = QPen(Qt.green, 10)
+        self.line_list = list()
+        self.stage_removal = None
+
+    def mousePressEvent(self, event):
+        # print(self.itemAt(event.scenePos().x(), event.scenePos().y()))
+        path = QPainterPath()
+        path.addRect(event.scenePos().x() - 5, event.scenePos().y() - 5, 10, 10)
+        selitems = self.items(path)
+        if isinstance(selitems[0], QGraphicsLineItem):
+            self.stage_removal = selitems[0]
+
+    def mouseMoveEvent(self, event):
+        self.stage_removal = None
+        x = event.scenePos().x()
+        y = event.scenePos().y()
+        if not self.current_line:
+            self.current_line = self.addLine(x, y, x, y, self.pen)
+            self.current_pts = (x, y)
+        else:
+            self.current_line.setLine(QLineF(self.current_pts[0], self.current_pts[1], x, y))
+
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        if self.stage_removal:
+            self.removeItem(self.stage_removal)
+        else:
+            self.line_list.append(self.current_line)
+            self.current_line = None
+        
+    def clear_lines(self):
+        for line in self.line_list:
+            self.removeItem(line)
+        self.line_list = list()
+
+    def draw_lines(self, lines):
+        self.clear_lines()
+        for line in lines:
+            self.line_list.append(self.addLine(line[0], line[1], line[2], line[3], self.pen))
+
+    def get_lines(self):
+        return [[line.line().x1(), line.line().y1(), line.line().x2(), line.line().y2()] for line in self.line_list]
 
 class Consumer(QMainWindow, Ui_MainWindow):
 
@@ -102,7 +172,7 @@ class Consumer(QMainWindow, Ui_MainWindow):
         self.radioButton_map.setDisabled(True)
         
         #set up views
-        self.graphicsScene_main = MyGraphicsScene(self.graphicsView_main)
+        self.graphicsScene_main = LineSelectGraphicsScene(self.graphicsView_main)
         self.graphicsView_main.setScene(self.graphicsScene_main)
 
         self.graphicsScene_sub_left = MyGraphicsScene(self.graphicsView_sub_left)
@@ -119,6 +189,11 @@ class Consumer(QMainWindow, Ui_MainWindow):
 
         self.vid_list = list()
         self.vid_index = -1
+        self.prev_vid_index = -1
+
+    def change_vid_index(self, nind):
+        self.prev_vid_index = self.vid_index
+        self.vid_index = nind
 
     def get_image_filename(self):
 
@@ -146,13 +221,13 @@ class Consumer(QMainWindow, Ui_MainWindow):
         for item in vals:
             if item.endswith('.MOV') or item.endswith('.avi') or item.endswith('.mp4'):
                 self.vid_list.append(VideoCamItem(os.path.join(dirname, item)))
-        print(self.vid_list)
+        # print(self.vid_list)
         if len(self.vid_list) > 1:
             self.pushButton_next_cam.setDisabled(False)
         self.horizontalSlider.setDisabled(False)
         self.radioButton_lines.setDisabled(False)
         self.radioButton_map.setDisabled(False)
-        self.vid_index = 0
+        self.change_vid_index(0)
         self.update_view()
 
     def load_map(self):
@@ -170,28 +245,32 @@ class Consumer(QMainWindow, Ui_MainWindow):
             self.graphicsView_sub_right.setVisible(True)
 
     def hoiz_slider_val_changed(self):
-        print(self.horizontalSlider.value())
+        # print(self.horizontalSlider.value())
         self.graphicsScene_main.load_image(self.vid_list[self.vid_index].getFrame(self.horizontalSlider.value()))
 
     def next_button_click(self):
-        self.vid_index += 1
+        self.change_vid_index(self.vid_index + 1)
         if self.vid_index == (len(self.vid_list) - 1):
             self.pushButton_next_cam.setDisabled(True)
         self.pushButton_prev_cam.setDisabled(False)
         self.update_view()
     
     def prev_button_click(self):
-        self.vid_index -= 1
+        self.change_vid_index(self.vid_index - 1)
         if self.vid_index == 0:
             self.pushButton_prev_cam.setDisabled(True)
         self.pushButton_next_cam.setDisabled(False)
         self.update_view()
 
     def update_view(self):
+        # print(self.prev_vid_index)
+        self.vid_list[self.prev_vid_index].set_lines(self.graphicsScene_main.get_lines())
+
         vid = self.vid_list[self.vid_index]
         self.horizontalSlider.setMaximum(100)
         self.horizontalSlider.setValue(vid.getCurrentFrameIndex())
         self.graphicsScene_main.load_image(vid.getCurrentFrame())
+        self.graphicsScene_main.draw_lines(vid.get_lines())
             
 
 if __name__ == "__main__":
