@@ -21,7 +21,20 @@ COCO_INSTANCE_CATEGORY_NAMES = [
 
 
 class FasterRCNN:
+    """
+    This class is a object detector wrapper class for Fasterrcnn
+
+    Attributes:
+    model (detection): pretrained fasterrcnn
+    transform (Compose): transformations done to an image such as converting to tensor
+
+
+    """
     def __init__(self):
+        """
+        constructor for FasterRCNN class
+        """
+
         self.model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
             pretrained=True)
         self.model.cuda()
@@ -30,6 +43,16 @@ class FasterRCNN:
             [torchvision.transforms.ToTensor()])
 
     def get_bboxes(self, frame):
+        """
+        Given a frame finds all the bounding boxes of people
+
+        Parameters:
+        frame (ndarray): frame of a video 
+
+        Returns:
+        bboxes_ppl (ndarray): an array of bounding boxes of people
+        box_scr (array): array of confidence scores for each bounding box in bboxes_ppl
+        """
         img = self.transform(frame)  # Apply the transform to the image
         img = img.cuda()
         pred = self.model([img])  # Pass the image to the model

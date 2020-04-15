@@ -5,7 +5,6 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 
-# TODO: the openning of files should prob not be done in create_vid for modularity/preprocessing reasons
 
 FRAME_INDEX = 0
 ID_INDEX = 1
@@ -39,11 +38,16 @@ def init_args():
 
 def create_vid(output_video_path, input_video_path, output_text_path, view=False, delimiter=' '):
     """
-    creates a video using the out video
-    :param output_video_path: the name to save the video as
-    :param input_video_path: the video file path
-    :param output_text_path: the output text file
-    :return: 1 for successful; 0 for failure
+    Creates our "final reid video" with bounding boxes and ID number over people in the original video
+
+    Parameters:
+    output_video_path (str): the filename to save the video as
+    input_video_path (str): the video file path
+    output_text_path(str): the output text file
+
+    Returns:
+    1 for successful
+    0 for failure
     """
 
     if not os.path.exists(input_video_path):
@@ -97,10 +101,14 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
 def paint_frame(img, bboxes, ids):
     """
     paint an image with a list of bounding boxes and associated ids
-    :param img: the frame as a numpy array
-    :param bboxes: a list of bouding boxes - numpy array n x 4 array - each row is of form x1,y1,x2,y2
-    :param ids: a list of ids for the corresponding bouding boxes
-    :return: returns numpy array of image with bounding boxes painted on
+
+    Parameters
+    img (np.array): the frame as a numpy array
+    bboxes (np.array): a list of bouding boxes - numpy array n x 4 array - each row is of form x1,y1,x2,y2
+    ids (list): a list of ids for the corresponding bouding boxes
+
+    Returns
+    img (np.array): numpy array of image with bounding boxes painted on
     """
     for id, box in zip(ids, bboxes):
         cv2.rectangle(img,
@@ -118,6 +126,7 @@ def paint_frame(img, bboxes, ids):
     return img
 
 def append_extension(filename):
+    """ Returns the filename with the proper extension"""
     return filename + OUT_VIDEO_EXTENSION
 
 if __name__ == "__main__":

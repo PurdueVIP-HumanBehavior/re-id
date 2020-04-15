@@ -1,3 +1,9 @@
+'''
+Setup constants
+
+Will be refactored to be dynamically adjusted
+'''
+
 defaultkey = "default"
 
 # MSEE Trigger coordinates

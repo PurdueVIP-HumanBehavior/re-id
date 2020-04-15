@@ -1,4 +1,7 @@
-# TODO:(nhendy) script level docstring
+'''
+This script runs the full reid pipepline.
+'''
+
 import tempfile
 import galleries
 from detectors import FasterRCNN
@@ -73,30 +76,24 @@ def init_args():
 
 
 def read_img_and_compute_feat_vector(path, attribute_extractor):
+    """Returns feature vector from a filepath"""
     if os.path.isfile(path):
         img = Image.open(path)
         return attribute_extractor(img)
     return None
 
 
-def get_max_index(array, k=1):
-    maxnums = array[0:k]
-    maxinds = np.arange(0, k)
-    minins = min(maxnums)
-    mininin = maxnums.index(minins)
-    for i, val in enumerate(array):
-        if val > minins:
-            maxnums[mininin] = val
-            maxinds[mininin] = i
-            minins = min(maxnums)
-            mininin = maxnums.index(minins)
-    if len(maxnums) == 1:
-        return maxinds[0]
-    else:
-        return [x for _, x in sorted(zip(maxnums, maxinds), reverse=True)]
-
-
 def load_gallery_feat_vectors(imgs_dir, attribute_extractor):
+    """
+    Gets all the feature vectors from the gallery
+
+    Parameters:
+    imgs_dir (str): path to gallery directory
+    attribute_extractor (MgnWrapper): attribute extractor object
+
+    Returns:
+    feat_vectos (list): list of feature vectors
+    """
     if not os.path.exists(imgs_dir):
         raise ValueError("path doesn't exist")
     feat_vectors = list()
@@ -108,10 +105,18 @@ def load_gallery_feat_vectors(imgs_dir, attribute_extractor):
 
 
 def cosine_similarity(x, y):
+    """Computes cosines similarity (dot product) between x and y """
     return np.dot(x, y) / (np.sqrt(np.dot(x, x)) * np.sqrt(np.dot(y, y)))
 
 
 def write_gallery_imgs(imgs, path):
+    """
+    Write gallery image with ID in the filename
+
+    Parameters:
+    imgs (list): list of images
+    path (str): path to save the gallery images
+    """
     if not os.path.exists(path):
         os.makedirs(path)
     for i, img in enumerate(imgs):
@@ -121,6 +126,19 @@ def write_gallery_imgs(imgs, path):
 def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
                              output_files):
 
+    """
+    This method creates the SORT tracks and fills the gallery
+
+    Parameters:
+    video_loader (VideoLoader): Loader object
+    gallery (TriggerGallery): Gallery object
+    detector (FasterRCNN): Object detection object
+    sort_trackers (Sort): sort trackers
+    output_files (Dict): one for each tracker
+
+    Returns
+    file with tracks
+    """
     # Iterate through frames of all cameras
     for findex, frames in tqdm(video_loader):
 
@@ -179,6 +197,20 @@ def run_mot_and_fill_gallery(video_loader, gallery, detector, sort_trackers,
 
 def run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
                                   output_files, gallery_feature_vectors):
+
+    """
+    Using attribute extractor and sort tracks to assign ID's to people in the tracks
+
+    Parameters:
+    sort_trackers (Sort): SORT trackers object
+    attribute_extractor (MgnWrapper): attribute extractor object
+    output_files (Dict): one for each tracker
+    gallery_feature_vectors (list): a list of feature vectors from load_gallery_feat_vectors()
+    
+    Returns:
+    A txt file with the format
+    frameID - ID - bounding box coordinates(4 values)
+    """
     # Iterate through trackers for each camera
     for vidname, sorto in sort_trackers.items():
         tracks = sorto.trackers + sorto.rejects
@@ -221,6 +253,7 @@ def run_reid_model_and_assign_ids(sort_trackers, attribute_extractor,
 
 
 def convert_files_to_numpy(temp_dir, output_files):
+    """converts txt files to numpy arrays """
     for video_name, file_handle in output_files.items():
         file_handle.close()
         output_files[video_name] = np.loadtxt(os.path.join(

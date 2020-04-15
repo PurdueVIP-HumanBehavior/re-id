@@ -9,13 +9,28 @@ from constants import INPUT_RESOLUTION, PER_CHANNEL_MEAN, PER_CHANNEL_STD
 
 
 def ndarraytopil(img):
+    """Return a PIL image of an ndarray"""
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return Image.fromarray(img)
 
 
-# TODO: (nhendy) link to the paper
+
 class MgnWrapper:
+    """
+    This class is a wrapper class for the attribute extractor MGN
+
+    Attributes:
+    model (MGN): MGN model architecture
+    transform (Compose): transformations done to an image such as reshaping and normalizing
+    """
     def __init__(self, weights_path):
+        """
+        The constructor for MgnWrapper class
+
+        Parameters:
+        weights_path (str): MGN model weights path (MGN.pt)
+
+        """
         if not os.path.exists(weights_path):
             raise ValueError(
                 "Weights path given {} doesn't exist".format(weights_path))
@@ -24,14 +39,21 @@ class MgnWrapper:
         self.model.cuda()
         self.model.eval()
         self.transform = transforms.Compose([
-            # TODO: (nhendy) this was using bicubic interpolation before. Ask moiz why
             transforms.Resize(INPUT_RESOLUTION, interpolation=Image.BILINEAR),
             transforms.ToTensor(),
             transforms.Normalize(mean=PER_CHANNEL_MEAN, std=PER_CHANNEL_STD)
         ])
 
     def compute_feat_vector(self, inputs):
-        # TODO: (nhendy) needs more comments
+        """
+        Uses model to compute the feature vector given an image
+
+        Parameters:
+        inputs (Image or ndarray): PIL Image or ndarray of an image
+
+        Returns:
+        ndarray: The features extracted from MGN of the given image
+        """
         if isinstance(inputs, np.ndarray):
             inputs = ndarraytopil(inputs)
         inputs = self.transform(inputs).float()
@@ -43,7 +65,6 @@ class MgnWrapper:
                     3,
                     torch.arange(inputs.size(3) - 1, -1, -1).long())
             input_img = inputs.to('cuda')
-            # input_img = input_img.unsqueeze(0)
             outputs = self.model(input_img)
             f = outputs[0].data.cpu()
             ff = ff + f
@@ -53,4 +74,6 @@ class MgnWrapper:
         return ff
 
     def __call__(self, x):
+        """ Return the feature vector of an image x """
         return self.compute_feat_vector(x)
+

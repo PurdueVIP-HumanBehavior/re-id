@@ -4,6 +4,9 @@ import sys
 import argparse
 from tqdm import tqdm
 
+"""
+Given a video creates a directory all the frames in the video
+"""
 def init_args():
     parser = argparse.ArgumentParser(description="paints videos with bounding boxes and IDs")
     parser.add_argument("source_vid", metavar='src', type=str,
