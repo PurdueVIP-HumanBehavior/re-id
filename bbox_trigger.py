@@ -5,10 +5,36 @@ import numpy as np
 import collections
 
 
-# TODO: (nhendy) docstring
+
 class BboxTrigger:
+    """
+    This class is bounding box trigger for a door to build the gallery
+
+    Attributes:
+    _camera_id (str): name of the camera location
+    _ref_img (cv2 image): reference image (ex. Closed door)
+    _open_thresh (int): threshold value for opening a door
+    _close_thresh (int): threshold value for closing a door
+    _check_coords (list): 2D list of coordinates to check
+    _sample_coords (list): 2D list of trigger coordinates
+    _detector (detector.py): object detector (default FasterRCNN)
+    _check (int): flag for determining when triggering is in process
+    """
     def __init__(self, camera_id, ref_img, open_thresh, close_thresh,
                  check_coords, sample_coords, detector):
+        """
+        the constructor for BboxTrigger class
+
+        Parameters:
+        _camera_id (str): name of the camera location
+        _ref_img (cv2 image): reference image (ex. Closed door)
+        _open_thresh (int): threshold value for opening a door
+        _close_thresh (int): threshold value for closing a door
+        _check_coords (list): 2D list of coordinates to check
+        _sample_coords (list): 2D list of trigger coordinates
+        _detector (detector.py): object detector (default FasterRCNN)
+
+        """
         self._camera_id = camera_id
         self._open_thresh = open_thresh
         self._close_thresh = close_thresh
@@ -21,6 +47,16 @@ class BboxTrigger:
         self._check = 0
 
     def update(self, frames):
+        """
+        Given a image, find when to trigger and return bounding boxes of people in the trigger region
+
+        Parameters:
+        frames (dict): dictionary of frames from all the cameras
+
+        Returns:
+        bboxes (ndarry): bounding boxes of detected objects
+        sampimg (ndarray): cropped image of the trigger region
+        """
         img = frames[self._camera_id]
         chkimg = cv2.cvtColor(crop_image(img, self._check_coords),
                               cv2.COLOR_BGR2GRAY)
@@ -40,6 +76,11 @@ class BboxTrigger:
 
 "use is completely different from BboxTrigger"
 class VectorTrigger:
+    """
+    This class is for a Line trigger
+
+
+    """
     def __init__(self, video, vector, inpt, length_thresh, frame_offset):
         tmpvec = np.random.randn(2)
         invec = np.array([vector[2] - vector[0], vector[3] - vector[1]])
