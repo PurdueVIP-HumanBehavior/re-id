@@ -12,24 +12,24 @@ def coord_extraction (img):
         if event == cv2.EVENT_LBUTTONDBLCLK:
             coord.append([x,y])
 	
-# Open the image
+	# Open the image
     image = cv2.imread(img)
     height= image.shape[0]
     width = image.shape[1]
-# Scale the image so that it fits most monitors
+	# Scale the image so that it fits most monitors
     resize_factor = 1920/width if 1920/width < 1080/height else 1080/height
     dwidth = int(width*resize_factor)
     dheight= int(height*resize_factor)
     dim = (dwidth,dheight)
     resized = cv2.resize(image,dim)
 
-# Display the scaled image on screen
+	# Display the scaled image on screen
     clone = resized.copy()
     winname = 'Press ESC to exit; Press R to reload; Double Click to Select Reference Points'
     cv2.namedWindow(winname)
     cv2.setMouseCallback(winname,click)
 	
-# Extract points
+	# Extract points
     while True:
         cv2.imshow(winname,resized)
         #cv2.imshow(winname,image)
@@ -43,7 +43,7 @@ def coord_extraction (img):
 
     cv2.destroyAllWindows()
 
-# Rescale the points and format for output
+	# Rescale the points and format for output
     coord = np.asarray(coord)
     coord = coord / resize_factor
     pts = []
