@@ -2,7 +2,7 @@
  - Please read what the purdue [HELPS page](https://purduehelps.org/labmachine.html) has to say about this first.
 
 ## Login to HELPS machine
- - login to the computer with the following command: ```ssh <your purdue login>@ee220clnx1.ecn.purdue.edu```. Say yes to the security warning if it is your first time. Use your mypurdue password to login. 
+ - login to the computer with the following command: ```ssh <your purdue login>@ee220clnx1.ecn.purdue.edu```. Say yes to the security warning if it is your first time. Use your mypurdue password to login.
 
 ## Activating the conda environment
  - run the following
