@@ -126,7 +126,7 @@ ATTRIBUTE_LABEL = {
 ATTRIBUTES = sorted(ATTRIBUTE_LABEL.keys())
 
 
-def _canonicalize_attributes_mat(attributes):
+def _canonicalize_attributes_mat(attributes, set_name):
     # This function is to fix the bizzare and outlandish shape of
     # the attributes tensor saved in the .mat file associated with
     # Market1501 dataset.
@@ -135,18 +135,11 @@ def _canonicalize_attributes_mat(attributes):
     # where d stands for a "don't care" dimension that is always of size 1
     # The resulting tensor from this function has the shape
     # [set_id, attribute_id, person_idx] serving a more sane indexing code.
-    canonical_mat = np.zeros(shape=(2, Market1501Dataset.num_attributes + 1,
-                                    Market1501Dataset.num_test_ids))
+    canonical_mat = np.zeros(shape=(1, Market1501Dataset.num_attributes + 1,
+                                    Market1501Dataset.num_ids[set_name]))
     for attribute_id, attribute in enumerate(ATTRIBUTES + ['image_index']):
-        # Because there's one less id in the train set
-        # fill the 751th id with -1 which is an invalid id
-        canonical_mat[0, attribute_id] = np.concatenate([
-            attributes['market_attribute'][0][0][0][0][0][attribute][0],
-            np.asarray([-1])
-        ])
-    for attribute_id, attribute in enumerate(ATTRIBUTES + ['image_index']):
-        canonical_mat[1, attribute_id] = attributes['market_attribute'][0][0][
-            1][0][0][attribute][0]
+        canonical_mat[0, attribute_id] = attributes['market_attribute'][0][0][
+            set_name][0][0][attribute][0]
     return canonical_mat
 
 
@@ -156,8 +149,7 @@ class Market1501Dataset(data.Dataset):
     dataset_url = "http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip"
     attributes_url = "https://raw.githubusercontent.com/vana77/Market-1501_Attribute/master/market_attribute.mat"
     num_attributes = 27
-    num_train_ids = 750
-    num_test_ids = 751
+    num_ids = {'train': 751, 'test': 750}
     train_path = "bounding_box_train"
     test_path = "bounding_box_test"
     # TODO: (nhendy) figure out this gt bbox business
@@ -166,8 +158,8 @@ class Market1501Dataset(data.Dataset):
 
     def __init__(self,
                  root,
-                 input_transforms,
-                 target_transforms,
+                 input_transforms=None,
+                 target_transforms=None,
                  train=True,
                  include_attributes_labels=True):
         super(Market1501Dataset, self).__init__()
@@ -194,23 +186,19 @@ class Market1501Dataset(data.Dataset):
         attributes_mat = scipy.io.loadmat(
             os.path.join(self.root, self.dataset_dir_name,
                          self.attributes_file))
-        attributes_mat = _canonicalize_attributes_mat(attributes_mat)
-        # TODO: (nhendy) only do a specific set depending on the request dataset type
-        self._set_to_person_id_to_attributes = {'train': {}, 'test': {}}
-        for set_id in range(attributes_mat.shape[0]):
-            for attribute_id in range(attributes_mat.shape[1] - 1):
-                for person_idx in range(attributes_mat.shape[2]):
-                    set_name = self._set_id_to_name(set_id)
-                    if set_name == 'train' and person_idx >= self.num_train_ids:
-                        continue
-                    person_id = int(attributes_mat[set_id, -1, person_idx])
-                    if person_id not in self._set_to_person_id_to_attributes[
-                            set_name]:
-                        self._set_to_person_id_to_attributes[set_name][
-                            person_id] = np.zeros((27, ))
-                    self._set_to_person_id_to_attributes[set_name][person_id][
-                        attribute_id] = attributes_mat[set_id, attribute_id,
-                                                       person_idx]
+        attributes_mat = _canonicalize_attributes_mat(
+            attributes_mat, self._requested_set_name())
+        self._person_id_to_attributes = {}
+        for attribute_id in range(attributes_mat.shape[1] - 1):
+            for person_idx in range(attributes_mat.shape[2]):
+                set_name = self._requested_set_name()
+                if person_idx >= self.num_ids[set_name]:
+                    continue
+                person_id = int(attributes_mat[0, -1, person_idx])
+                if person_id not in self._person_id_to_attributes.keys():
+                    self._person_id_to_attributes[person_id] = np.zeros((27, ))
+                self._person_id_to_attributes[person_id][
+                    attribute_id] = attributes_mat[0, attribute_id, person_idx]
 
     def _download(self):
         download_and_extract_archive(self.dataset_url, self.root)
@@ -255,8 +243,7 @@ class Market1501Dataset(data.Dataset):
         filtered_targets = []
         set_name = self._requested_set_name()
         for i, person_id in enumerate(self._target_person_ids):
-            if person_id in self._set_to_person_id_to_attributes[
-                    set_name].keys():
+            if person_id in self._person_id_to_attributes.keys():
                 filtered_imgs.append(self._inputs[i])
                 filtered_targets.append(self._target_person_ids[i])
         self._inputs = filtered_imgs
@@ -266,7 +253,7 @@ class Market1501Dataset(data.Dataset):
         img, target = self._inputs[index], self._target_person_ids[index]
         if self._include_attributes:
             set_name = self._requested_set_name()
-            attributes = self._set_to_person_id_to_attributes[set_name][target]
+            attributes = self._person_id_to_attributes[target]
             target = np.concatenate(
                 [np.asarray(target).reshape((1, )),
                  attributes]).astype(np.float32)
