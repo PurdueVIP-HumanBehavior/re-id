@@ -66,6 +66,9 @@ class VideoCamItem(CamItem):
             retval[i] = {"line": line, "point": self.count_lines[line]}
         return retval
 
+    def get_name(self):
+        return os.path.splitext(super().get_name())[0]
+
     def __len__(self):
         return self.video_len
 

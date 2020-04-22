@@ -6,6 +6,7 @@ from attribute_extractors import MgnWrapper
 import loaders
 from PIL import Image
 from utils import crop_image
+import config_parser
 import argparse
 import functools
 import os
@@ -64,6 +65,8 @@ def init_args():
         default="tmpgal/",
         help="Path to gallery",
     )
+    parser.add_argument("--config",
+                        help="json file with configuration info")
     return parser.parse_args()
 
 
@@ -234,25 +237,28 @@ def main():
                                     args.interval)
 
     # TODO: (nhendy) do this mapping in a config file
-
-    trigger_causes = [
-        VectorTrigger(
-            # TODO: (nhendy) weird hardcoded name
-            "NE_Moiz",
-            np.array([227, 470, 227+244, 470]),
-            np.array([917, 537]),
-            500,
-            5
-        ),
-        VectorTrigger(
-            # TODO: (nhendy) weird hardcoded name
-            "NE_Moiz",
-            np.array([1433, 384, 1900, 384]),
-            np.array([917, 537]),
-            500,
-            5
-        )
-    ]
+    if args.config:
+        json_dict = config_parser.parse_json_filename(args.config)
+        trigger_causes = config_parser.extract_line_trigger_list(json_dict)
+    else:
+        trigger_causes = [
+            VectorTrigger(
+                # TODO: (nhendy) weird hardcoded name
+                "NE_Moiz",
+                np.array([227, 470, 227+244, 470]),
+                np.array([917, 537]),
+                500,
+                5
+            ),
+            VectorTrigger(
+                # TODO: (nhendy) weird hardcoded name
+                "NE_Moiz",
+                np.array([1433, 384, 1900, 384]),
+                np.array([917, 537]),
+                500,
+                5
+            )
+        ]
 
     gallery = galleries.TriggerLineGallery(attribute_extractor, trigger_causes)
 

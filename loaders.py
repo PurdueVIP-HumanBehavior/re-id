@@ -39,7 +39,7 @@ class VideoLoader(Loader):
     def __init__(self, path, vids, interval=1):
         super().__init__()
         self.path = path
-        names = ['.'.join(key.split('.')[:-1]) for key in vids]
+        names = [os.path.splitext(key)[0] for key in vids]
         self.videos = {
             name: cv2.VideoCapture(os.path.join(path, file))
             for name, file in zip(names, vids)

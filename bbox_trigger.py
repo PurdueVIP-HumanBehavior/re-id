@@ -42,7 +42,11 @@ class BboxTrigger:
 class VectorTrigger:
     def __init__(self, video, vector, inpt, length_thresh, frame_offset):
         tmpvec = np.random.randn(2)
-        invec = np.array([vector[2] - vector[0], vector[3] - vector[1]])
+        maxx = max(vector[2], vector[0])
+        minx = min(vector[2], vector[0])
+        maxy = max(vector[3], vector[1])
+        miny = min(vector[3], vector[1])
+        invec = np.array([maxx - minx, maxy - miny])
         # tmpvec -= tmpvec.dot(invec) * invec
         # print(tmpvec.dot(invec))
         # self.ovector = tmpvec / np.linalg.norm(tmpvec)
