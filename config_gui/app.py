@@ -256,9 +256,9 @@ class Consumer(QMainWindow, Ui_MainWindow):
         return filename
         
     def load_video_directory(self):
-        # dirname = self.get_directory_name()
+        dirname = self.get_directory_name()
         self.vid_list = list()
-        dirname = "/media/moiz/Windows/Users/Moiz/Documents/CAM2/reid-data/bidc2/" 
+        # dirname = "/media/moiz/Windows/Users/Moiz/Documents/CAM2/reid-data/bidc2/"
         vals = os.listdir(dirname)
         for item in vals:
             if item.endswith('.MOV') or item.endswith('.avi') or item.endswith('.mp4'):
