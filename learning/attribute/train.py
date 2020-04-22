@@ -55,6 +55,8 @@ def train(data_root, epochs, log_dir):
         lambda x: x / 255.0,
         torchvision.transforms.ToTensor(), lambda x: x.type(torch.FloatTensor)
     ])
+    # Skip the first 2 elements in the lable which are the ID, age and subtract 1
+    # to make it one-hot encoded
     target_transforms = torchvision.transforms.Compose([lambda x: x[2:] - 1])
     loaders = {}
     for mode in _modes():
@@ -78,9 +80,7 @@ def train(data_root, epochs, log_dir):
         filename_suffix=datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
     for epoch in range(epochs):
         running_loss = {'train': 0.0, 'test': 0.0}
-        running_tps = {'train': 0, 'test': 0}
-        running_samples = {'train': 0, 'test': 0}
-        for mode in ["train"]:
+        for mode in _modes():
             print("Running {} on {} samples".format(mode, len(loaders[mode])))
             if mode == "test":
                 net.eval()
@@ -92,30 +92,25 @@ def train(data_root, epochs, log_dir):
                 labels = labels.to(DEVICE)
                 optimizer.zero_grad()
                 outputs = net(inputs)
-                # import ipdb
-                # ipdb.set_trace()
                 loss = criterion(outputs, labels)
-                if mode == "test":
-                    import ipdb
-                    ipdb.set_trace()
-                # running_tps[mode] += (outputs.argmax(
-                #     dim=1) == labels).sum().item()
-                # running_samples[mode] += inputs.shape[0]
                 running_loss[mode] += loss.item()
                 if mode == "train":
                     loss.backward()
                     optimizer.step()
                 if mode == "train" and i % 500 == 0:
-                    writer.add_scalar('loss/{}'.format(mode), loss.item(),
-                                      global_step)
+                    writer.add_scalar('loss/500th_iter_train_loss',
+                                      loss.item(), global_step)
                     print("Training loss, iter {}: {}".format(
                         i, running_loss['train'] / (i + 1)))
-                global_step += 1
+                if mode == 'train':
+                    global_step += 1
+            writer.add_scalars('loss/epoch_loss', {
+                '{}_loss'.format(mode):
+                running_loss[mode] / len(loaders[mode])
+            }, global_step)
         print("Epoch {}: Train Loss {}, Validation Loss {}.".format(
             epoch, running_loss['train'] / len(loaders['train']),
             running_loss['test'] / len(loaders['test'])))
-        # running_tps['train'] / running_samples['train'],
-        # running_tps['test'] / running_samples['test']))
     writer.close()
 
 
