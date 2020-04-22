@@ -88,6 +88,7 @@ class MyGraphicsScene(QGraphicsScene):
             self.imgq = QImage(self.img.data, w, h, w, QImage.Format_Grayscale8)
         pixmap = QPixmap.fromImage(self.imgq)
         self.pixmapitem = self.addPixmap(pixmap)
+        self.pixmapitem.setZValue(-1)
 
         self.view.fitInView(QRectF(0, 0, w, h), Qt.KeepAspectRatio)
         self.update()
@@ -150,8 +151,9 @@ class LineSelectGraphicsScene(MyGraphicsScene):
                 self.line_list.remove(self.stage_removal)
                 self.stage_removal = None
             else:
-                self.line_list.append(self.current_line)
-                self.state = LSGSStates.LINE_DRAWN
+                if self.current_line:
+                    self.line_list.append(self.current_line)
+                    self.state = LSGSStates.LINE_DRAWN
         elif self.state == LSGSStates.POINT_DRAWN:
             self.state = LSGSStates.IDLE
         
@@ -242,6 +244,13 @@ class Consumer(QMainWindow, Ui_MainWindow):
             return None
 
         return dirname 
+
+    def get_save_filename_json(self):
+        filename, _ = QFileDialog.getSaveFileName(self, caption="save configuration", filter="JSON files (*.json)")
+        if not filename:
+            return None
+        if not filename.endswith(".json"): filename + ".json"
+        return filename
         
     def load_video_directory(self):
         # dirname = self.get_directory_name()
@@ -305,12 +314,13 @@ class Consumer(QMainWindow, Ui_MainWindow):
 
     def save_butt(self):
         self.vid_list[self.vid_index].set_lines(self.graphicsScene_main.get_lines())
-        self.generate_file("config.json")
+        filename = self.get_save_filename_json()
+        self.generate_file(filename)
 
     def generate_file(self, filename):
         info_dict = {vid.get_name(): vid.get_lines_jsonfriendly() for vid in self.vid_list}
         with open(filename, "w") as f:
-            f.write(json.dumps(info_dict))
+            f.write(json.dumps(info_dict, sort_keys=True, indent=2))
             
             
 
