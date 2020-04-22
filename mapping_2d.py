@@ -136,12 +136,6 @@ def heatmap_gen (pts_2d, interval = 1):
 		coord_list = coord_dict[i]
 		for j in range (1,len(coord_list)):
 			cv2.line(fl_plan_img, tuple(coord_list[j-1]), tuple(coord_list[j]),color[i],5)
-	
-	x = 70
-	y = 950
-	for i in range(count):
-		cv2.putText(fl_plan_img, str(i), (x,y), cv2.FONT_HERSHEY_SIMPLEX, 5, color[i],3)
-		y+=3
 
 	cv2.imwrite('heatmap.png',fl_plan_img)
 
