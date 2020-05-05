@@ -4,7 +4,9 @@ import sys
 import numpy as np
 import argparse
 from tqdm import tqdm
+from mapping_2d import *
 
+# TODO: the openning of files should prob not be done in create_vid for modularity/preprocessing reasons
 
 FRAME_INDEX = 0
 ID_INDEX = 1
@@ -38,16 +40,11 @@ def init_args():
 
 def create_vid(output_video_path, input_video_path, output_text_path, view=False, delimiter=' '):
     """
-    Creates our "final reid video" with bounding boxes and ID number over people in the original video
-
-    Parameters:
-    output_video_path (str): the filename to save the video as
-    input_video_path (str): the video file path
-    output_text_path(str): the output text file
-
-    Returns:
-    1 for successful
-    0 for failure
+    creates a video using the out video
+    :param output_video_path: the name to save the video as
+    :param input_video_path: the video file path
+    :param output_text_path: the output text file
+    :return: 1 for successful; 0 for failure
     """
 
     if not os.path.exists(input_video_path):
@@ -67,12 +64,12 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
     frame_indexes = np.sort(np.unique(frmame_id_data[:, FRAME_INDEX]))
     interval = np.average(frame_indexes[1:] - frame_indexes[:-1]).astype(np.int64)
 
-    output_video_path = append_extension(output_video_path)
+    output_video_path = "".join(output_video_path.split('.')[:-1]) + OUT_VIDEO_EXTENSION
     while os.path.exists(output_video_path):
         decision = input("the video file " + output_video_path + " already exists. Want to overwrite it? [y/n] ").lower()
         if decision == 'n':
             output_video_path = input("new file name: ")
-            output_video_path = append_extension(output_video_path)
+            output_video_path = "".join(output_video_path.split('.')[:-1]) + OUT_VIDEO_EXTENSION
         else:
             break
 
@@ -81,7 +78,7 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
     output_video = cv2.VideoWriter(output_video_path,
                              OUT_VIDEO_CODEC,
                              video_fps, video_size)
-
+    coord_list = []
     for frame in tqdm(frame_indexes):
         frame_rows = frmame_id_data[frmame_id_data[:, FRAME_INDEX] == frame, :]
         input_video.set(cv2.CAP_PROP_POS_FRAMES, frame)
@@ -89,28 +86,32 @@ def create_vid(output_video_path, input_video_path, output_text_path, view=False
         if ret:
             bboxes = frame_rows[:, X1_INDEX:(Y2_INDEX + 1)].astype(np.int64)
             ids = frame_rows[:, ID_INDEX].astype(np.int64)
-            nimg = paint_frame(img, bboxes, ids)
+            nimg, mapping_coord = paint_frame(img, bboxes, ids)
+            coord_list.append(mapping_coord)
             if view:
                 cv2.imshow("savename", nimg)
                 cv2.waitKey(int(1000 / video_fps))
             output_video.write(nimg)
         else:
             break
+    
     output_video.release()
+    pts_2d = transform_2d(coord_list)
+    heatmap_gen(pts_2d, interval=5)
 
 def paint_frame(img, bboxes, ids):
     """
     paint an image with a list of bounding boxes and associated ids
-
-    Parameters
-    img (np.array): the frame as a numpy array
-    bboxes (np.array): a list of bouding boxes - numpy array n x 4 array - each row is of form x1,y1,x2,y2
-    ids (list): a list of ids for the corresponding bouding boxes
-
-    Returns
-    img (np.array): numpy array of image with bounding boxes painted on
+    :param img: the frame as a numpy array
+    :param bboxes: a list of bouding boxes - numpy array n x 4 array - each row is of form x1,y1,x2,y2
+    :param ids: a list of ids for the corresponding bouding boxes
+    :return: returns numpy array of image with bounding boxes painted on
     """
+
+    mapping_coord = []
     for id, box in zip(ids, bboxes):
+        center = (int(((box[2]-box[0])/2+box[0])),int(box[3]),id)
+        mapping_coord.append(center)
         cv2.rectangle(img,
                       (box[0], box[1]),
                       (box[2], box[3]),
@@ -123,11 +124,7 @@ def paint_frame(img, bboxes, ids):
                     3,
                     color=(0, 255, 0),
                     thickness=3)
-    return img
-
-def append_extension(filename):
-    """ Returns the filename with the proper extension"""
-    return filename + OUT_VIDEO_EXTENSION
+    return img, mapping_coord
 
 if __name__ == "__main__":
     sys.exit(main())
