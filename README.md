@@ -1,5 +1,6 @@
 # NO LONGER ACTIVE
 This repo is no longer active. Please go [here](https://github.com/PurdueCAM2Project/HumanBehaviorRE-ID) for future updates. 
+It is however a private repo. We plan to make it public sometime in the future. For now, you can read about our work in this [overleaf document](https://www.overleaf.com/read/cdbszfytxjff). 
 
 ## run_reid_pipeline.py setup
 final.py is the script used to generate the output video from last semester.
